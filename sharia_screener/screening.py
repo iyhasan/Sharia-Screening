@@ -27,10 +27,17 @@ DEFAULT_THRESHOLDS = {
 PROHIBITED_KEYWORDS = {
     "alcohol",
     "liquor",
+    "brewery",
+    "distillery",
+    "winery",
     "pork",
     "swine",
+    "bacon",
+    "ham",
     "gambling",
     "casino",
+    "betting",
+    "lottery",
     "riba",
     "interest-based lending",
     "conventional banking",
@@ -38,7 +45,23 @@ PROHIBITED_KEYWORDS = {
     "banks",
     "financial services",
     "insurance",
+    "mortgage",
+    "credit card",
+    "payday",
+    "adult entertainment",
+    "pornography",
     "tobacco",
+    "weapons",
+    "arms",
+    "defense",
+}
+
+ALLOWED_KEYWORDS = {
+    "islamic bank",
+    "islamic banking",
+    "sharia compliant",
+    "shariah compliant",
+    "islamic finance",
 }
 
 
@@ -124,7 +147,9 @@ class ScreenEngine:
             profile.sector.lower(),
             profile.industry.lower(),
         ])
-        if any(keyword in prohibited for keyword in PROHIBITED_KEYWORDS) or any(
+        if any(keyword in profile_text for keyword in ALLOWED_KEYWORDS):
+            pass
+        elif any(keyword in prohibited for keyword in PROHIBITED_KEYWORDS) or any(
             keyword in profile_text for keyword in PROHIBITED_KEYWORDS
         ):
             result = ScreeningResult(

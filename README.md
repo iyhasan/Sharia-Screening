@@ -54,6 +54,8 @@ The unified provider pulls **market data from yfinance** and **financials from S
 
 Output includes `methodologies.aaoifi_book_method` (ratios vs total assets) and `methodologies.market_cap_method` (ratios vs market cap). Tangible assets always use **total assets** in both methodologies.
 
+Edit `data/segment_rules.json` to tune prohibited/allowed keywords (e.g., remove weapons/defense if you don’t want to exclude them).
+
 ## Library usage
 ```python
 from sharia_screener.providers.local_json import LocalJsonProvider

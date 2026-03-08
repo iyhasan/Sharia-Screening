@@ -1,19 +1,38 @@
 {
   "prohibited_keywords": [
     "alcohol",
-    "liquor",
+    "brewery",
+    "distillery",
+    "winery",
     "pork",
     "swine",
+    "bacon",
+    "ham",
     "gambling",
     "casino",
+    "betting",
+    "lottery",
     "riba",
     "interest",
     "conventional banking",
+    "bank",
+    "banks",
+    "mortgage",
+    "credit card",
+    "payday",
+    "insurance",
+    "adult",
+    "porn",
     "tobacco",
     "weapons",
-    "adult"
+    "arms",
+    "defense"
   ],
   "allowed_keywords": [
+    "islamic bank",
+    "islamic banking",
+    "sharia compliant",
+    "shariah compliant",
     "islamic finance",
     "halal"
   ]
