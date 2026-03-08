@@ -106,7 +106,14 @@ class ScreenEngine:
 
         # Sector/activity exclusions
         prohibited = set(map(str.lower, profile.prohibited_activities or []))
-        if any(keyword in prohibited for keyword in PROHIBITED_KEYWORDS):
+        profile_text = " ".join([
+            profile.name.lower(),
+            profile.sector.lower(),
+            profile.industry.lower(),
+        ])
+        if any(keyword in prohibited for keyword in PROHIBITED_KEYWORDS) or any(
+            keyword in profile_text for keyword in PROHIBITED_KEYWORDS
+        ):
             result = ScreeningResult(
                 ticker=ticker,
                 compliant=False,

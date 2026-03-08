@@ -18,6 +18,9 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent"
 ]
+dependencies = [
+  "yfinance>=0.2.43"
+]
 
 [project.scripts]
 sharia-screener = "sharia_screener.cli:main"

@@ -1,0 +1,12 @@
+{
+  "companies": {
+    "AAPL": {
+      "financials": {
+        "interest_bearing_deposits": 40000000000,
+        "non_permissible_income": 1000000000,
+        "tangible_assets": 140000000000,
+        "as_of": "2025-12-31"
+      }
+    }
+  }
+}

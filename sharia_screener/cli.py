@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Dict
 
 from sharia_screener.providers.local_json import LocalJsonProvider
+from sharia_screener.providers.yfinance_provider import YFinanceProvider
 from sharia_screener.screening import ScreenEngine
 
 
@@ -14,11 +15,30 @@ def parse_holdings(value: str) -> Dict[str, Decimal]:
     return {k.upper(): Decimal(str(v)) for k, v in payload.items()}
 
 
+def load_json_file(path: str | None) -> dict:
+    if not path:
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Sharia compliance screening tool")
     parser.add_argument("--ticker", type=str, help="Single ticker")
     parser.add_argument("--tickers", type=str, help="Comma-separated tickers")
-    parser.add_argument("--data", type=str, required=True, help="Path to local JSON data")
+    parser.add_argument(
+        "--provider",
+        type=str,
+        default="local",
+        choices=["local", "yfinance"],
+        help="Data provider to use",
+    )
+    parser.add_argument("--data", type=str, help="Path to local JSON data (for local provider)")
+    parser.add_argument(
+        "--supplemental",
+        type=str,
+        help="Path to supplemental JSON data (for yfinance provider)",
+    )
     parser.add_argument(
         "--holdings",
         type=str,
@@ -37,7 +57,14 @@ def main() -> None:
 
     holdings = parse_holdings(args.holdings) if args.holdings else {}
 
-    provider = LocalJsonProvider(args.data)
+    if args.provider == "local":
+        if not args.data:
+            raise SystemExit("--data is required for local provider")
+        provider = LocalJsonProvider(args.data)
+    else:
+        supplemental = load_json_file(args.supplemental)
+        provider = YFinanceProvider(supplemental=supplemental)
+
     engine = ScreenEngine(provider=provider)
 
     results = []

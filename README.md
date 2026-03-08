@@ -17,17 +17,23 @@ pip install -e .
 ## CLI usage
 ```bash
 # Single ticker using local JSON data
-sharia-screener --ticker AAPL --data data/example.json
+sharia-screener --ticker AAPL --provider local --data data/example.json
 
 # Multiple tickers
-sharia-screener --tickers AAPL,MSFT --data data/example.json
+sharia-screener --tickers AAPL,MSFT --provider local --data data/example.json
 
 # Provide holdings (per-ticker share count)
-sharia-screener --tickers AAPL,MSFT --data data/example.json --holdings '{"AAPL": 120, "MSFT": 50}'
+sharia-screener --tickers AAPL,MSFT --provider local --data data/example.json --holdings '{"AAPL": 120, "MSFT": 50}'
+
+# Use yfinance (requires supplemental data for non-permissible income, etc.)
+sharia-screener --ticker AAPL --provider yfinance --supplemental data/supplemental.json
 ```
 
 ## Data input format
-The CLI currently supports a **local JSON** data source. See `data/example.json` for the expected structure. Data sources are configurable via provider classes.
+The CLI supports a **local JSON** data source. See `data/example.json` for the expected structure.
+
+### yfinance + supplemental data
+yfinance does not provide non-permissible income or interest-bearing deposits directly. To keep results auditable and avoid fabricated defaults, use a supplemental JSON file for those fields (and any missing values). Format mirrors the local JSON schema, but you only need to supply the fields that yfinance cannot.
 
 ## Library usage
 ```python

@@ -40,14 +40,29 @@ class LocalJsonProvider(DataProvider):
         fin = data.get("financials")
         if not fin:
             return None
+
+        required_fields = [
+            "market_cap",
+            "interest_bearing_debt",
+            "interest_bearing_deposits",
+            "total_income",
+            "non_permissible_income",
+            "total_assets",
+            "tangible_assets",
+            "outstanding_shares",
+            "as_of",
+        ]
+        if any(field not in fin or fin.get(field) is None for field in required_fields):
+            return None
+
         return Financials(
-            market_cap=Decimal(str(fin.get("market_cap", "0"))),
-            interest_bearing_debt=Decimal(str(fin.get("interest_bearing_debt", "0"))),
-            interest_bearing_deposits=Decimal(str(fin.get("interest_bearing_deposits", "0"))),
-            total_income=Decimal(str(fin.get("total_income", "0"))),
-            non_permissible_income=Decimal(str(fin.get("non_permissible_income", "0"))),
-            total_assets=Decimal(str(fin.get("total_assets", "0"))),
-            tangible_assets=Decimal(str(fin.get("tangible_assets", "0"))),
-            outstanding_shares=Decimal(str(fin.get("outstanding_shares", "0"))),
-            as_of=str(fin.get("as_of", "")),
+            market_cap=Decimal(str(fin.get("market_cap"))),
+            interest_bearing_debt=Decimal(str(fin.get("interest_bearing_debt"))),
+            interest_bearing_deposits=Decimal(str(fin.get("interest_bearing_deposits"))),
+            total_income=Decimal(str(fin.get("total_income"))),
+            non_permissible_income=Decimal(str(fin.get("non_permissible_income"))),
+            total_assets=Decimal(str(fin.get("total_assets"))),
+            tangible_assets=Decimal(str(fin.get("tangible_assets"))),
+            outstanding_shares=Decimal(str(fin.get("outstanding_shares"))),
+            as_of=str(fin.get("as_of")),
         )
