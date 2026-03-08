@@ -1,171 +1,102 @@
 #!/usr/bin/env python3
 """
-Test script for Sharia Compliance Screener
+Test script for Sharia Compliance Screener (new engine)
 
-Run this to verify the screening logic works with REAL data (no mock data!)
-Tests multiple stocks and displays results.
+Uses the same provider logic as the CLI. Configure via env vars:
+- SHARIA_PROVIDER (local | yfinance | sec)
+- SHARIA_DATA_PATH
+- SHARIA_SUPPLEMENTAL_PATH
+- SHARIA_SEGMENT_RULES_PATH
+- SEC_USER_AGENT
 """
 
+import os
 import sys
+import json
 from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+from sharia_screener.providers.local_json import LocalJsonProvider
+from sharia_screener.providers.yfinance_provider import YFinanceProvider
+from sharia_screener.providers.sec_xbrl_provider import SecXbrlProvider
+from sharia_screener.screening import ScreenEngine
 
-from screener import ShariaScreener
+def build_engine() -> ScreenEngine:
+    provider = os.getenv("SHARIA_PROVIDER", "local")
+    data_path = os.getenv("SHARIA_DATA_PATH", str(Path(__file__).parent.parent / "data" / "example.json"))
+    supplemental_path = os.getenv("SHARIA_SUPPLEMENTAL_PATH")
+    segment_rules_path = os.getenv("SHARIA_SEGMENT_RULES_PATH")
+    sec_user_agent = os.getenv("SEC_USER_AGENT")
+
+    supplemental = {}
+    if supplemental_path and Path(supplemental_path).exists():
+        import json
+        with open(supplemental_path, "r", encoding="utf-8") as f:
+            supplemental = json.load(f)
+
+    segment_rules = {}
+    if segment_rules_path and Path(segment_rules_path).exists():
+        import json
+        with open(segment_rules_path, "r", encoding="utf-8") as f:
+            segment_rules = json.load(f)
+
+    if provider == "local":
+        provider_obj = LocalJsonProvider(data_path)
+    elif provider == "yfinance":
+        provider_obj = YFinanceProvider(supplemental=supplemental)
+    else:
+        provider_obj = SecXbrlProvider(
+            supplemental=supplemental, user_agent=sec_user_agent, segment_rules=segment_rules
+        )
+
+    return ScreenEngine(provider=provider_obj)
 
 
-def test_single_stock(symbol: str):
-    """Test screening for a single stock."""
-    
+def test_single_stock(engine: ScreenEngine, symbol: str):
     print(f"\n{'='*80}")
     print(f"📊 SHARIA COMPLIANCE TEST: {symbol.upper()}")
     print('='*80)
-    
-    screener = ShariaScreener()
-    result = screener.check_stock(symbol)
-    
-    print(f"\n📝 Company Details:")
-    print(f"   • Symbol:     {result.symbol}")
-    print(f"   • Sector:     {result.sector or 'N/A'}")
-    
-    print(f"\n✅ Business Screening:")
-    if result.business_screen == "PASS":
-        print(f"   • Status:     ✅ PASS - Allowed sector and business type")
-    elif result.business_screen == "REJECTED":
-        print(f"   • Status:     ❌ REJECTED")
-        print(f"   • Reason:     {result.rejection_reason}")
-    else:
-        print(f"   • Status:     ⚠️ ERROR - {result.business_screen}")
-    
-    print(f"\n📈 Financial Screening:")
-    print(f"   • Debt/Mkt Cap:    {result.debt_to_market_cap_pct:.2f}%")
-    print(f"   • Cash Reserves:   {result.cash_reserves_ratio*100:.1f}% of assets")
-    print(f"   • Threshold:       < 33.0% required")
-    
-    if result.financial_screen == "PASS":
-        print(f"   • Status:           ✅ PASS - Within Sharia limits")
-    elif result.financial_screen == "FAIL":
-        print(f"   • Status:           ⚠️  FAIL - Exceeds debt threshold")
-        print(f"   • Purification:     {result.purification_ratio*100:.2f}% of profits must be donated to charity")
-    else:
-        print(f"   • Status:           ❌ ERROR - {result.financial_screen}")
-    
-    print(f"\n💰 Purification (Washing) Amount:")
-    purif_pct = result.purification_ratio * 100
-    if purif_pct == 0.0:
-        print(f"   • Required Rate:    0% - All revenue is halal")
-        print(f"   • Action:           No purification needed")
-    else:
-        print(f"   • Required Rate:    {purif_pct:.2f}% of dividend/profits")
-        print(f"   • Action:           Donate this portion to charity before using earnings")
-    
-    print(f"\n📅 Screened at:      {result.screening_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
-    
-    if result.is_compliant and not result.rejection_reason:
-        return True
-    elif not result.is_compliant:
-        print(f"\n❌ SUMMARY: Stock does NOT meet Sharia compliance standards")
-        return False
-    else:
-        print(f"\n⚠️ SUMMARY: Conditional approval - purify {purif_pct:.2f}% of earnings")
-        return True
+
+    result = engine.screen(symbol)
+    print(result.report)
+    return result
 
 
-def test_batch_symbols(symbols: list):
-    """Test screening for multiple stocks."""
-    
+def test_batch_symbols(engine: ScreenEngine, symbols: list):
     print("\n" + "="*80)
-    print("🔍 BATCH SCREENING TEST (REAL DATA)")
+    print("🔍 BATCH SCREENING TEST")
     print("="*80)
-    
-    screener = ShariaScreener()
+
     results = []
-    
     for symbol in symbols:
-        result = screener.check_stock(symbol)
+        result = engine.screen(symbol)
         results.append(result)
-        
-        status_icon = "✅" if result.is_compliant else ("❌" if result.business_screen == "REJECTED" else "⚠️")
-        print(f"{status_icon} {symbol}: Status={result.financial_screen}, Debt={result.debt_to_market_cap_pct:.1f}%")
-    
-    # Summary statistics
-    compliant = sum(1 for r in results if r.is_compliant)
-    rejected = sum(1 for r in results if not r.is_compliant and r.business_screen == "REJECTED")
-    conditional = sum(1 for r in results if not r.is_compliant and r.financial_screen == "FAIL")
-    
+        status_icon = "✅" if result.status == "compliant" else ("❌" if result.status == "non_compliant" else "⚠️")
+        print(f"{status_icon} {symbol}: status={result.status}")
+
     print(f"\n{'='*80}")
     print("📊 BATCH RESULTS SUMMARY")
     print('='*80)
     print(f"Total symbols: {len(symbols)}")
-    print(f"✅ Fully Compliant:    {compliant} ({compliant/len(symbols)*100:.1f}%)")
-    print(f"❌ Rejected:           {rejected} ({rejected/len(symbols)*100:.1f}%)")
-    print(f"⚠️ Conditional (needs purification): {conditional} ({conditional/len(symbols)*100:.1f}%)")
-
-
-def demonstrate_compliance_logic():
-    """Walk through the complete compliance logic with examples."""
-    
-    print("\n" + "="*80)
-    print("📊 COMPLIANCE LOGIC DEMONSTRATION")
-    print("="*80)
-    
-    # Test cases with known outcomes
-    test_cases = [
-        ("AAPL", "Apple Inc. - Expected: APPROVED (Tech company, low debt)"),
-        ("MSFT", "Microsoft - Expected: APPROVED (Software, manageable debt)"),
-        ("BAC",  "Bank of America - Expected: REJECTED (Banking sector)"),
-        ("TGT",  "Target Corp. - Expected: APPROVED (Retail, low debt)"),
-    ]
-    
-    screener = ShariaScreener()
-    
-    for symbol, expected in test_cases:
-        print(f"\n{'─'*80}")
-        print(f"📋 Testing: {symbol.upper()}")
-        print(f"   Expected: {expected}")
-        
-        result = screener.check_stock(symbol)
-        
-        # Verify the logic worked correctly
-        if "APPROVED" in expected and (result.is_compliant or (not result.is_compliant and result.financial_screen == "FAIL")):
-            status = "✅ Correctly assessed"
-        elif "REJECTED" in expected and not result.is_compliant and result.business_screen == "REJECTED":
-            status = "✅ Correctly rejected"
-        else:
-            status = f"⚠️  Need to review - got {result.status}"
-        
-        print(f"   Result:   {status}")
-        print(f"   Business: {result.business_screen}")
-        print(f"   Financial: {result.financial_screen}")
-        print(f"   Debt Ratio: {result.debt_to_market_cap_pct:.1f}%")
+    print(f"✅ Compliant: {sum(1 for r in results if r.status == 'compliant')}")
+    print(f"❌ Non-compliant: {sum(1 for r in results if r.status == 'non_compliant')}")
+    print(f"⚠️ Insufficient data: {sum(1 for r in results if r.status == 'insufficient_data')}")
 
 
 def main():
-    """Main test runner."""
-    
     print("\n" + "="*80)
-    print("🧪 SHARIA SCREENER - UNIT TESTS (REAL DATA)")
+    print("🧪 SHARIA SCREENER - TEST RUN")
     print("="*80)
-    print("\nThis script uses yfinance to get REAL market data.")
-    print("No mock data is used - all results are calculated live.\n")
-    
-    # Run individual tests
-    test_single_stock("AAPL")
-    test_single_stock("MSFT")
-    
-    # Batch test
-    print("\n" + "="*80)
-    print("📦 BATCH TESTING - Common large-cap stocks")
-    print("="*80)
+
+    engine = build_engine()
+
+    test_single_stock(engine, "AAPL")
+    test_single_stock(engine, "MSFT")
+
     symbols_to_test = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "BAC", "JPM"]
-    test_batch_symbols(symbols_to_test)
-    
-    # Demonstrate logic
-    demonstrate_compliance_logic()
-    
+    test_batch_symbols(engine, symbols_to_test)
+
     print("\n" + "="*80)
-    print("✅ TESTING COMPLETE - Review results above")
+    print("✅ TESTING COMPLETE")
     print("="*80)
 
 
