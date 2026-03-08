@@ -27,6 +27,9 @@ sharia-screener --tickers AAPL,MSFT --provider local --data data/example.json --
 
 # Use yfinance (requires supplemental data for non-permissible income, etc.)
 sharia-screener --ticker AAPL --provider yfinance --supplemental data/supplemental.json
+
+# Use SEC XBRL (requires a valid User-Agent + supplemental data)
+sharia-screener --ticker AAPL --provider sec --supplemental data/sec_supplemental.json --sec-user-agent "Your Name contact@example.com"
 ```
 
 ## Data input format
@@ -34,6 +37,12 @@ The CLI supports a **local JSON** data source. See `data/example.json` for the e
 
 ### yfinance + supplemental data
 yfinance does not provide non-permissible income or interest-bearing deposits directly. To keep results auditable and avoid fabricated defaults, use a supplemental JSON file for those fields (and any missing values). Format mirrors the local JSON schema, but you only need to supply the fields that yfinance cannot.
+
+### SEC XBRL + supplemental data
+SEC XBRL provides core financials (assets, revenue, debt, shares) but not non-permissible income. The SEC provider supports:
+- `revenue_segments` (for rules-based classification using prohibited keywords)
+- explicit overrides for `non_permissible_income` and `interest_bearing_deposits`
+- optional assumption: `interest_bearing_deposits_from_cash: true` (explicit opt-in)
 
 ## Library usage
 ```python

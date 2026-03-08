@@ -7,6 +7,7 @@ from typing import Dict
 
 from sharia_screener.providers.local_json import LocalJsonProvider
 from sharia_screener.providers.yfinance_provider import YFinanceProvider
+from sharia_screener.providers.sec_xbrl_provider import SecXbrlProvider
 from sharia_screener.screening import ScreenEngine
 
 
@@ -30,14 +31,19 @@ def main() -> None:
         "--provider",
         type=str,
         default="local",
-        choices=["local", "yfinance"],
+        choices=["local", "yfinance", "sec"],
         help="Data provider to use",
     )
     parser.add_argument("--data", type=str, help="Path to local JSON data (for local provider)")
     parser.add_argument(
         "--supplemental",
         type=str,
-        help="Path to supplemental JSON data (for yfinance provider)",
+        help="Path to supplemental JSON data (for yfinance/sec providers)",
+    )
+    parser.add_argument(
+        "--sec-user-agent",
+        type=str,
+        help="SEC requires a descriptive User-Agent (or set SEC_USER_AGENT env var)",
     )
     parser.add_argument(
         "--holdings",
@@ -61,9 +67,12 @@ def main() -> None:
         if not args.data:
             raise SystemExit("--data is required for local provider")
         provider = LocalJsonProvider(args.data)
-    else:
+    elif args.provider == "yfinance":
         supplemental = load_json_file(args.supplemental)
         provider = YFinanceProvider(supplemental=supplemental)
+    else:
+        supplemental = load_json_file(args.supplemental)
+        provider = SecXbrlProvider(supplemental=supplemental, user_agent=args.sec_user_agent)
 
     engine = ScreenEngine(provider=provider)
 
