@@ -52,6 +52,8 @@ Template files live in `config/`:
 ### Unified provider (SEC + yfinance)
 The unified provider pulls **market data from yfinance** and **financials from SEC**, then applies **best‑estimate heuristics** for fields not explicitly reported. See `docs/ESTIMATES.md` for full details.
 
+Output includes `methodologies.book_value` and `methodologies.market_cap`, each with its own ratios and compliance status.
+
 ## Library usage
 ```python
 from sharia_screener.providers.local_json import LocalJsonProvider

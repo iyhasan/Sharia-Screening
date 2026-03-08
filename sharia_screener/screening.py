@@ -143,9 +143,17 @@ class ScreenEngine:
             result.report = self._report(result)
             return result
 
-        debt_ratio = self._ratio(financials.interest_bearing_debt, financials.market_cap)
-        deposits_ratio = self._ratio(
+        debt_ratio_market = self._ratio(
+            financials.interest_bearing_debt, financials.market_cap
+        )
+        debt_ratio_assets = self._ratio(
+            financials.interest_bearing_debt, financials.total_assets
+        )
+        deposits_ratio_market = self._ratio(
             financials.interest_bearing_deposits, financials.market_cap
+        )
+        deposits_ratio_assets = self._ratio(
+            financials.interest_bearing_deposits, financials.total_assets
         )
         non_perm_income_ratio = self._ratio(
             financials.non_permissible_income, financials.total_income
@@ -158,8 +166,10 @@ class ScreenEngine:
         )
 
         ratios = {
-            "debt_to_market_cap": debt_ratio,
-            "interest_deposits_to_market_cap": deposits_ratio,
+            "debt_to_market_cap": debt_ratio_market,
+            "interest_deposits_to_market_cap": deposits_ratio_market,
+            "debt_to_total_assets": debt_ratio_assets,
+            "interest_deposits_to_total_assets": deposits_ratio_assets,
             "non_permissible_income_pct": self._pct(
                 financials.non_permissible_income, financials.total_income
             ),
@@ -180,8 +190,10 @@ class ScreenEngine:
         compliant = True
 
         if (
-            debt_ratio is None
-            or deposits_ratio is None
+            debt_ratio_market is None
+            or debt_ratio_assets is None
+            or deposits_ratio_market is None
+            or deposits_ratio_assets is None
             or non_perm_income_ratio is None
             or tangible_assets_ratio_assets is None
             or tangible_assets_ratio_market is None
@@ -199,10 +211,11 @@ class ScreenEngine:
                 estimation_notes=getattr(financials, "estimation_notes", []),
             )
 
-        if debt_ratio > self.thresholds["debt_to_market_cap"]:
+        # Book-value (total assets) compliance used as primary verdict
+        if debt_ratio_assets > self.thresholds["debt_to_market_cap"]:
             compliant = False
             reason_codes.append("debt_ratio_exceeded")
-        if deposits_ratio > self.thresholds["deposits_to_market_cap"]:
+        if deposits_ratio_assets > self.thresholds["deposits_to_market_cap"]:
             compliant = False
             reason_codes.append("deposit_ratio_exceeded")
         if non_perm_income_ratio > self.thresholds["non_perm_income_pct"]:
@@ -230,18 +243,58 @@ class ScreenEngine:
                     )
 
         threshold = self.thresholds["tangible_assets_pct"]
+
+        def evaluate_method(debt_ratio, deposits_ratio, tangible_ratio):
+            codes = []
+            ok = True
+            if debt_ratio > self.thresholds["debt_to_market_cap"]:
+                ok = False
+                codes.append("debt_ratio_exceeded")
+            if deposits_ratio > self.thresholds["deposits_to_market_cap"]:
+                ok = False
+                codes.append("deposit_ratio_exceeded")
+            if non_perm_income_ratio > self.thresholds["non_perm_income_pct"]:
+                ok = False
+                codes.append("non_permissible_income_exceeded")
+            if tangible_ratio < self.thresholds["tangible_assets_pct"]:
+                ok = False
+                codes.append("tangible_assets_below_threshold")
+            return ok, codes
+
+        book_ok, book_codes = evaluate_method(
+            debt_ratio_assets, deposits_ratio_assets, tangible_assets_ratio_assets
+        )
+        market_ok, market_codes = evaluate_method(
+            debt_ratio_market, deposits_ratio_market, tangible_assets_ratio_market
+        )
+
         methodologies = {
             "book_value": {
-                "compliant": tangible_assets_ratio_assets >= threshold,
-                "tangible_assets_pct": ratios.get("tangible_assets_pct"),
-                "threshold": str((threshold * Decimal("100")).quantize(Decimal("0.01"))),
+                "compliant": book_ok,
+                "status": "compliant" if book_ok else "non_compliant",
+                "reason_codes": book_codes,
+                "ratios": {
+                    "debt_to_total_assets": ratios.get("debt_to_total_assets"),
+                    "interest_deposits_to_total_assets": ratios.get("interest_deposits_to_total_assets"),
+                    "non_permissible_income_pct": ratios.get("non_permissible_income_pct"),
+                    "tangible_assets_pct": ratios.get("tangible_assets_pct"),
+                },
             },
             "market_cap": {
-                "compliant": tangible_assets_ratio_market >= threshold,
-                "tangible_assets_pct": ratios.get("tangible_assets_pct_market_cap"),
-                "threshold": str((threshold * Decimal("100")).quantize(Decimal("0.01"))),
+                "compliant": market_ok,
+                "status": "compliant" if market_ok else "non_compliant",
+                "reason_codes": market_codes,
+                "ratios": {
+                    "debt_to_market_cap": ratios.get("debt_to_market_cap"),
+                    "interest_deposits_to_market_cap": ratios.get("interest_deposits_to_market_cap"),
+                    "non_permissible_income_pct": ratios.get("non_permissible_income_pct"),
+                    "tangible_assets_pct": ratios.get("tangible_assets_pct_market_cap"),
+                },
             },
         }
+
+        compliant = book_ok
+        reason_codes = book_codes
 
         result = ScreeningResult(
             ticker=ticker,
