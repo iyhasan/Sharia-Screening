@@ -129,16 +129,31 @@ class SecXbrlSource:
             ],
         )
         operating_lease_assets, _ = self._latest_fact(facts, ["OperatingLeaseRightOfUseAsset"])
+        cash, _ = self._latest_fact(facts, ["CashAndCashEquivalentsAtCarryingValue"])
+
+        goodwill, _ = self._latest_fact(facts, ["Goodwill"])
+        intangibles, _ = self._latest_fact(facts, ["IntangibleAssets"])
+        short_term_investments, _ = self._latest_fact(
+            facts, ["ShortTermInvestments", "MarketableSecuritiesCurrent"]
+        )
 
         if tangible_assets is None:
             parts = [p for p in [ppe, inventory, receivables, operating_lease_assets] if p is not None]
             if parts:
                 tangible_assets = sum(parts)
-            elif total_assets is not None:
-                goodwill, _ = self._latest_fact(facts, ["Goodwill"])
-                intangibles, _ = self._latest_fact(facts, ["IntangibleAssets"])
-                if goodwill is not None and intangibles is not None:
-                    tangible_assets = total_assets - goodwill - intangibles
+            elif total_assets is not None and goodwill is not None and intangibles is not None:
+                tangible_assets = total_assets - goodwill - intangibles
+
+        if total_assets is not None and cash is not None:
+            alt = total_assets - cash
+            if short_term_investments is not None:
+                alt = alt - short_term_investments
+            if goodwill is not None:
+                alt = alt - goodwill
+            if intangibles is not None:
+                alt = alt - intangibles
+            if tangible_assets is None or alt > tangible_assets:
+                tangible_assets = alt
 
         interest_bearing_debt = self._sum_facts(
             facts,
@@ -150,7 +165,6 @@ class SecXbrlSource:
             ],
         )
 
-        cash, _ = self._latest_fact(facts, ["CashAndCashEquivalentsAtCarryingValue"])
         shares_outstanding, _ = self._latest_fact(facts, ["EntityCommonStockSharesOutstanding"], unit="shares")
 
         interest_income = self._sum_facts(
