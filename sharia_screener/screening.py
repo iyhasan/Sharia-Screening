@@ -34,6 +34,10 @@ PROHIBITED_KEYWORDS = {
     "riba",
     "interest-based lending",
     "conventional banking",
+    "bank",
+    "banks",
+    "financial services",
+    "insurance",
     "tobacco",
 }
 
