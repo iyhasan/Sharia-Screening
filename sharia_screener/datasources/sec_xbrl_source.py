@@ -165,6 +165,10 @@ class SecXbrlSource:
                 "InvestmentIncomeInterest",
                 "InterestAndDividendIncomeOperating",
                 "InterestAndOtherIncome",
+                "InvestmentIncome",
+                "InvestmentIncomeNet",
+                "NonoperatingIncomeExpense",
+                "OtherNonoperatingIncome",
             ],
         )
 

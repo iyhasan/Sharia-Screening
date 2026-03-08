@@ -161,10 +161,6 @@ class ScreenEngine:
         tangible_assets_ratio_assets = self._ratio(
             financials.tangible_assets, financials.total_assets
         )
-        tangible_assets_ratio_market = self._ratio(
-            financials.tangible_assets, financials.market_cap
-        )
-
         ratios = {
             "debt_to_market_cap": debt_ratio_market,
             "interest_deposits_to_market_cap": deposits_ratio_market,
@@ -174,9 +170,6 @@ class ScreenEngine:
                 financials.non_permissible_income, financials.total_income
             ),
             "tangible_assets_pct": self._pct(financials.tangible_assets, financials.total_assets),
-            "tangible_assets_pct_market_cap": self._pct(
-                financials.tangible_assets, financials.market_cap
-            ),
         }
 
         reason_codes = []
@@ -196,7 +189,6 @@ class ScreenEngine:
             or deposits_ratio_assets is None
             or non_perm_income_ratio is None
             or tangible_assets_ratio_assets is None
-            or tangible_assets_ratio_market is None
         ):
             return ScreeningResult(
                 ticker=ticker,
@@ -265,7 +257,7 @@ class ScreenEngine:
             debt_ratio_assets, deposits_ratio_assets, tangible_assets_ratio_assets
         )
         market_ok, market_codes = evaluate_method(
-            debt_ratio_market, deposits_ratio_market, tangible_assets_ratio_market
+            debt_ratio_market, deposits_ratio_market, tangible_assets_ratio_assets
         )
 
         methodologies = {
@@ -288,7 +280,7 @@ class ScreenEngine:
                     "debt_to_market_cap": ratios.get("debt_to_market_cap"),
                     "interest_deposits_to_market_cap": ratios.get("interest_deposits_to_market_cap"),
                     "non_permissible_income_pct": ratios.get("non_permissible_income_pct"),
-                    "tangible_assets_pct": ratios.get("tangible_assets_pct_market_cap"),
+                    "tangible_assets_pct": ratios.get("tangible_assets_pct"),
                 },
             },
         }
