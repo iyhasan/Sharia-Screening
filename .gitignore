@@ -12,6 +12,12 @@ __pycache__/
 # Environment variables
 .env
 .env.local
+.env.*
+
+# Local/private config
+config/*.local.json
+data/*.local.json
+*.secrets.json
 
 # IDE
 .vscode/
