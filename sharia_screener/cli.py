@@ -6,21 +6,30 @@ import os
 from decimal import Decimal
 from typing import Dict
 
+from sharia_screener.exceptions import ConfigurationError, ScreeningError, ValidationError
 from sharia_screener.providers.local_json import LocalJsonProvider
 from sharia_screener.providers.unified_provider import UnifiedProvider
 from sharia_screener.screening import ScreenEngine
 
 
 def parse_holdings(value: str) -> Dict[str, Decimal]:
-    payload = json.loads(value)
+    try:
+        payload = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise ValidationError("Invalid JSON for --holdings") from exc
     return {k.upper(): Decimal(str(v)) for k, v in payload.items()}
 
 
 def load_json_file(path: str | None) -> dict:
     if not path:
         return {}
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    if not os.path.exists(path):
+        raise ConfigurationError(f"File not found: {path}")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError as exc:
+        raise ValidationError(f"Invalid JSON file: {path}") from exc
 
 
 def main() -> None:
@@ -73,43 +82,55 @@ def main() -> None:
     if not tickers:
         raise SystemExit("Provide --ticker or --tickers")
 
-    holdings = parse_holdings(args.holdings) if args.holdings else {}
-
-    if args.provider == "local":
-        if args.json:
-            provider = LocalJsonProvider(json.loads(args.json))
+    try:
+        holdings = parse_holdings(args.holdings) if args.holdings else {}
+        if args.provider == "local":
+            if args.json:
+                try:
+                    payload = json.loads(args.json)
+                except json.JSONDecodeError as exc:
+                    raise ValidationError("Invalid JSON for --json payload") from exc
+                provider = LocalJsonProvider(payload)
+            else:
+                if not args.data:
+                    raise ConfigurationError("--data is required for local provider")
+                provider = LocalJsonProvider(args.data)
         else:
-            if not args.data:
-                raise SystemExit("--data is required for local provider")
-            provider = LocalJsonProvider(args.data)
-    else:
-        segment_rules = load_json_file(args.segment_rules)
-        provider = UnifiedProvider(sec_user_agent=args.sec_user_agent, segment_rules=segment_rules)
+            segment_rules = load_json_file(args.segment_rules)
+            provider = UnifiedProvider(sec_user_agent=args.sec_user_agent, segment_rules=segment_rules)
 
-    engine = ScreenEngine(provider=provider)
+        engine = ScreenEngine(provider=provider)
 
-    results = []
-    for ticker in tickers:
-        shares = holdings.get(ticker.upper())
-        result = engine.screen(ticker, shares_held=shares)
-        results.append(
-            {
-                "ticker": result.ticker,
-                "compliant": result.compliant,
-                "status": result.status,
-                "reason_codes": result.reason_codes,
-                "ratios": {k: (str(v) if v is not None else None) for k, v in result.ratios.items()},
-                "wash_percentage": str(result.wash_percentage) if result.wash_percentage is not None else None,
-                "wash_amount_per_share": str(result.wash_amount_per_share) if result.wash_amount_per_share is not None else None,
-                "investor_wash_amount": str(result.investor_wash_amount) if result.investor_wash_amount is not None else None,
-                "citations": result.citations,
-                "report": result.report,
-                "estimation_notes": result.estimation_notes,
-                "methodologies": result.methodologies,
-            }
-        )
+        results = []
+        for ticker in tickers:
+            shares = holdings.get(ticker.upper())
+            result = engine.screen(ticker, shares_held=shares, fail_on_insufficient_data=True)
+            results.append(
+                {
+                    "ticker": result.ticker,
+                    "compliant": result.compliant,
+                    "status": result.status,
+                    "reason_codes": result.reason_codes,
+                    "ratios": {k: (str(v) if v is not None else None) for k, v in result.ratios.items()},
+                    "wash_percentage": str(result.wash_percentage)
+                    if result.wash_percentage is not None
+                    else None,
+                    "wash_amount_per_share": str(result.wash_amount_per_share)
+                    if result.wash_amount_per_share is not None
+                    else None,
+                    "investor_wash_amount": str(result.investor_wash_amount)
+                    if result.investor_wash_amount is not None
+                    else None,
+                    "citations": result.citations,
+                    "report": result.report,
+                    "estimation_notes": result.estimation_notes,
+                    "methodologies": result.methodologies,
+                }
+            )
 
-    print(json.dumps({"results": results}, indent=2))
+        print(json.dumps({"results": results}, indent=2))
+    except ScreeningError as exc:
+        raise SystemExit(f"Screening failed: {exc}") from exc
 
 
 if __name__ == "__main__":

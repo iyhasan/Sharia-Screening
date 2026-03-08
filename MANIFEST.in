@@ -1,0 +1,6 @@
+include README.md
+include LICENSE
+include .env.example
+include data/example.json
+include config/*.template.json
+include docs/*.md

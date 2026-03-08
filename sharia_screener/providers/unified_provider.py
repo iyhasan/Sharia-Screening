@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Optional
 
+from sharia_screener.exceptions import UpstreamDataError, ValidationError
 from sharia_screener.models import CompanyProfile, Financials
 from sharia_screener.providers.base import DataProvider
 from sharia_screener.screening import PROHIBITED_KEYWORDS
@@ -13,7 +14,7 @@ from sharia_screener.datasources.sec_xbrl_source import SecXbrlSource
 class UnifiedProvider(DataProvider):
     """
     Single provider that combines multiple data sources (SEC XBRL + yfinance)
-    and applies best-estimate heuristics when direct values are unavailable.
+    and applies documented estimation heuristics when direct values are unavailable.
     """
 
     def __init__(self, sec_user_agent: Optional[str] = None, segment_rules: Optional[dict] = None):
@@ -21,13 +22,17 @@ class UnifiedProvider(DataProvider):
         self.yf = YFinanceSource()
         self.segment_rules = segment_rules or {}
 
-    def get_company_profile(self, ticker: str) -> Optional[CompanyProfile]:
-        profile = self.sec.get_profile(ticker) or {}
+    def get_company_profile(self, ticker: str) -> CompanyProfile:
+        try:
+            profile = self.sec.get_profile(ticker) or {}
+        except UpstreamDataError as exc:
+            raise UpstreamDataError(f"SEC profile lookup failed for {ticker.upper()}: {exc}") from exc
+
         if not profile:
             profile = self.yf.get_profile(ticker) or {}
 
         if not profile:
-            return None
+            raise UpstreamDataError(f"No profile data found for {ticker.upper()}")
 
         return CompanyProfile(
             ticker=ticker.upper(),
@@ -60,14 +65,20 @@ class UnifiedProvider(DataProvider):
                 total += Decimal(str(revenue))
         return total
 
-    def get_financials(self, ticker: str) -> Optional[Financials]:
-        sec_fin = self.sec.get_financials(ticker)
+    def get_financials(self, ticker: str) -> Financials:
+        try:
+            sec_fin = self.sec.get_financials(ticker)
+        except UpstreamDataError as exc:
+            raise UpstreamDataError(f"SEC financials lookup failed for {ticker.upper()}: {exc}") from exc
+
         yf_fin = self.yf.get_financials(ticker)
         yf_market = self.yf.get_market_data(ticker)
         yf_profile = self.yf.get_profile(ticker)
 
         market_cap = yf_market.get("market_cap")
-        interest_bearing_debt = sec_fin.get("interest_bearing_debt") or yf_fin.get("interest_bearing_debt")
+        interest_bearing_debt = sec_fin.get("interest_bearing_debt") or yf_fin.get(
+            "interest_bearing_debt"
+        )
         total_income = sec_fin.get("total_income") or yf_fin.get("total_income")
         total_assets = sec_fin.get("total_assets") or yf_fin.get("total_assets")
         tangible_assets = sec_fin.get("tangible_assets") or yf_fin.get("tangible_assets")
@@ -97,7 +108,11 @@ class UnifiedProvider(DataProvider):
             has_non_perm_signal = True
             estimation_notes.append("non_permissible_income includes SEC-reported interest income")
 
-        segments = self.sec.get_revenue_segments(ticker)
+        try:
+            segments = self.sec.get_revenue_segments(ticker)
+        except UpstreamDataError as exc:
+            raise UpstreamDataError(f"SEC revenue segment lookup failed for {ticker.upper()}: {exc}") from exc
+
         segment_estimate = self._estimate_non_permissible_from_segments(segments)
         if segment_estimate is not None:
             non_permissible_income += segment_estimate
@@ -129,18 +144,24 @@ class UnifiedProvider(DataProvider):
             "as_of": as_of,
         }
 
-        if any(v is None for v in required.values()):
-            return None
+        missing = [k for k, v in required.items() if v is None]
+        if missing:
+            raise UpstreamDataError(
+                f"Missing required unified provider data for {ticker.upper()}: {', '.join(missing)}"
+            )
 
-        return Financials(
-            market_cap=Decimal(str(market_cap)),
-            interest_bearing_debt=Decimal(str(interest_bearing_debt)),
-            interest_bearing_deposits=Decimal(str(interest_bearing_deposits)),
-            total_income=Decimal(str(total_income)),
-            non_permissible_income=Decimal(str(non_permissible_income)),
-            total_assets=Decimal(str(total_assets)),
-            tangible_assets=Decimal(str(tangible_assets)),
-            outstanding_shares=Decimal(str(outstanding_shares)),
-            as_of=str(as_of),
-            estimation_notes=estimation_notes,
-        )
+        try:
+            return Financials(
+                market_cap=Decimal(str(market_cap)),
+                interest_bearing_debt=Decimal(str(interest_bearing_debt)),
+                interest_bearing_deposits=Decimal(str(interest_bearing_deposits)),
+                total_income=Decimal(str(total_income)),
+                non_permissible_income=Decimal(str(non_permissible_income)),
+                total_assets=Decimal(str(total_assets)),
+                tangible_assets=Decimal(str(tangible_assets)),
+                outstanding_shares=Decimal(str(outstanding_shares)),
+                as_of=str(as_of),
+                estimation_notes=estimation_notes,
+            )
+        except Exception as exc:
+            raise ValidationError(f"Invalid numeric data from unified provider for {ticker.upper()}") from exc

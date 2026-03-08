@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
+
+from sharia_screener.exceptions import ConfigurationError, UpstreamDataError
 
 
 class SecXbrlSource:
@@ -15,20 +18,31 @@ class SecXbrlSource:
     SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
 
     def __init__(self, user_agent: Optional[str] = None):
-        self.user_agent = user_agent or os.getenv(
-            "SEC_USER_AGENT", "sharia-screener/0.1 (contact: support@example.com)"
-        )
+        user_agent = user_agent or os.getenv("SEC_USER_AGENT")
+        if not user_agent:
+            raise ConfigurationError(
+                "SEC User-Agent is required. Provide sec_user_agent or set SEC_USER_AGENT."
+            )
+        self.user_agent = user_agent
         self._ticker_map = None
 
     def _fetch_json(self, url: str) -> dict:
         req = urllib.request.Request(url, headers={"User-Agent": self.user_agent})
-        with urllib.request.urlopen(req) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(req) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.URLError as exc:
+            raise UpstreamDataError(f"SEC request failed: {url}") from exc
+        except json.JSONDecodeError as exc:
+            raise UpstreamDataError(f"Invalid JSON from SEC: {url}") from exc
 
     def _fetch_text(self, url: str) -> str:
         req = urllib.request.Request(url, headers={"User-Agent": self.user_agent})
-        with urllib.request.urlopen(req) as resp:
-            return resp.read().decode("utf-8")
+        try:
+            with urllib.request.urlopen(req) as resp:
+                return resp.read().decode("utf-8")
+        except urllib.error.URLError as exc:
+            raise UpstreamDataError(f"SEC request failed: {url}") from exc
 
     def _ticker_map_data(self) -> dict:
         if self._ticker_map is None:
@@ -133,9 +147,6 @@ class SecXbrlSource:
 
         goodwill, _ = self._latest_fact(facts, ["Goodwill"])
         intangibles, _ = self._latest_fact(facts, ["IntangibleAssets"])
-        short_term_investments, _ = self._latest_fact(
-            facts, ["ShortTermInvestments", "MarketableSecuritiesCurrent"]
-        )
 
         if tangible_assets is None:
             parts = [p for p in [ppe, inventory, receivables, operating_lease_assets] if p is not None]
@@ -143,7 +154,6 @@ class SecXbrlSource:
                 tangible_assets = sum(parts)
             elif total_assets is not None and goodwill is not None and intangibles is not None:
                 tangible_assets = total_assets - goodwill - intangibles
-
 
         interest_bearing_debt = self._sum_facts(
             facts,
@@ -155,7 +165,9 @@ class SecXbrlSource:
             ],
         )
 
-        shares_outstanding, _ = self._latest_fact(facts, ["EntityCommonStockSharesOutstanding"], unit="shares")
+        shares_outstanding, _ = self._latest_fact(
+            facts, ["EntityCommonStockSharesOutstanding"], unit="shares"
+        )
 
         interest_income = self._sum_facts(
             facts,
@@ -210,7 +222,10 @@ class SecXbrlSource:
         xbrl_text = self._fetch_text(base_url + primary_doc)
 
         # parse XML
-        root = ET.fromstring(xbrl_text)
+        try:
+            root = ET.fromstring(xbrl_text)
+        except ET.ParseError as exc:
+            raise UpstreamDataError("SEC XBRL instance could not be parsed") from exc
         ns = {
             "xbrli": "http://www.xbrl.org/2003/instance",
             "xbrldi": "http://xbrl.org/2006/xbrldi",

@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Optional
 
+from sharia_screener.exceptions import UpstreamDataError, ValidationError
 from sharia_screener.models import ScreeningResult
 from sharia_screener.providers.base import DataProvider
 
@@ -116,29 +117,42 @@ class ScreenEngine:
             lines.append("Estimates: " + "; ".join(result.estimation_notes))
         return " ".join(lines)
 
-    def screen(self, ticker: str, shares_held: Optional[Decimal] = None) -> ScreeningResult:
+    def _insufficient_data_result(
+        self, ticker: str, reason: str, estimation_notes: Optional[list[str]] = None
+    ) -> ScreeningResult:
+        return ScreeningResult(
+            ticker=ticker,
+            compliant=False,
+            status="insufficient_data",
+            reason_codes=[reason],
+            ratios={
+                "debt_to_market_cap": None,
+                "interest_deposits_to_market_cap": None,
+                "non_permissible_income_pct": None,
+                "tangible_assets_pct": None,
+            },
+            wash_percentage=None,
+            wash_amount_per_share=None,
+            citations=[AAOIFI_CITATIONS["data_period"]],
+            report=f"{ticker}: insufficient data to evaluate.",
+            estimation_notes=estimation_notes or [],
+        )
+
+    def screen(
+        self,
+        ticker: str,
+        shares_held: Optional[Decimal] = None,
+        *,
+        fail_on_insufficient_data: bool = True,
+    ) -> ScreeningResult:
         ticker = ticker.upper()
         profile = self.provider.get_company_profile(ticker)
         financials = self.provider.get_financials(ticker)
 
         if not profile or not financials:
-            return ScreeningResult(
-                ticker=ticker,
-                compliant=False,
-                status="insufficient_data",
-                reason_codes=["missing_required_data"],
-                ratios={
-                    "debt_to_market_cap": None,
-                    "interest_deposits_to_market_cap": None,
-                    "non_permissible_income_pct": None,
-                    "tangible_assets_pct": None,
-                },
-                wash_percentage=None,
-                wash_amount_per_share=None,
-                citations=[AAOIFI_CITATIONS["data_period"]],
-                report=f"{ticker}: insufficient data to evaluate.",
-                estimation_notes=[],
-            )
+            if fail_on_insufficient_data:
+                raise UpstreamDataError(f"Missing profile or financial data for {ticker}")
+            return self._insufficient_data_result(ticker, "missing_required_data")
 
         # Sector/activity exclusions
         prohibited = set(map(str.lower, profile.prohibited_activities or []))
@@ -209,8 +223,6 @@ class ScreenEngine:
             AAOIFI_CITATIONS["tangible_assets"],
         ]
 
-        compliant = True
-
         if (
             debt_ratio_market is None
             or debt_ratio_assets is None
@@ -219,20 +231,16 @@ class ScreenEngine:
             or non_perm_income_ratio is None
             or tangible_assets_ratio_assets is None
         ):
-            return ScreeningResult(
-                ticker=ticker,
-                compliant=False,
-                status="insufficient_data",
-                reason_codes=["invalid_ratio_calculation"],
-                ratios=ratios,
-                wash_percentage=None,
-                wash_amount_per_share=None,
-                citations=[AAOIFI_CITATIONS["data_period"]],
-                report=f"{ticker}: insufficient data to evaluate.",
+            if fail_on_insufficient_data:
+                raise ValidationError(f"Invalid ratio calculation for {ticker}")
+            return self._insufficient_data_result(
+                ticker,
+                "invalid_ratio_calculation",
                 estimation_notes=getattr(financials, "estimation_notes", []),
             )
 
         # Book-value (total assets) compliance used as primary verdict
+        compliant = True
         if debt_ratio_assets > self.thresholds["debt_to_market_cap"]:
             compliant = False
             reason_codes.append("debt_ratio_exceeded")
@@ -262,8 +270,6 @@ class ScreenEngine:
                     investor_wash = (wash_amount_per_share * shares_held).quantize(
                         Decimal("0.0001"), rounding=ROUND_HALF_UP
                     )
-
-        threshold = self.thresholds["tangible_assets_pct"]
 
         def evaluate_method(debt_ratio, deposits_ratio, tangible_ratio):
             codes = []

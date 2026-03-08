@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "AAOIFI-based Sharia compliance screening tool"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 authors = [
   { name = "Ishaq" }
 ]
@@ -22,11 +22,28 @@ dependencies = [
   "yfinance>=0.2.43"
 ]
 
+[project.optional-dependencies]
+test = [
+  "pytest>=7.4"
+]
+dev = [
+  "build>=1.2",
+  "twine>=5.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/openclaw/sharia-screener"
+Issues = "https://github.com/openclaw/sharia-screener/issues"
+
 [project.scripts]
 sharia-screener = "sharia_screener.cli:main"
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 include = ["sharia_screener*"]
+exclude = ["src*", "tests*"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
