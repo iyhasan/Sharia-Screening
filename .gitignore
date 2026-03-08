@@ -39,3 +39,9 @@ scripts/*.dot.*
 ./*.egg-info
 .venv/
 *.pyc
+
+# Documentation
+PRD.md
+
+# macOS
+.DS_Store
