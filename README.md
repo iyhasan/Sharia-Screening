@@ -7,6 +7,7 @@ AAOIFI-based Sharia compliance screening tool. Provides a CLI and a Python libra
 - Financial ratio screens (30% / 30% / 5% / 33.33%)
 - Purification (wash) calculations
 - Machine-readable JSON output + human-readable report
+- Dual methodology outputs (book-value vs market-cap for tangible assets)
 - Strict `insufficient_data` handling (no fabricated defaults)
 
 ## Install (local)

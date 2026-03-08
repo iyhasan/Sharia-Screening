@@ -73,6 +73,12 @@ class ScreenEngine:
                 ta=ratios.get("tangible_assets_pct"),
             )
         )
+        if result.methodologies:
+            book = result.methodologies.get("book_value", {})
+            market = result.methodologies.get("market_cap", {})
+            lines.append(
+                f"Methodologies: book_value={book.get('compliant')}, market_cap={market.get('compliant')}"
+            )
         if result.wash_percentage is not None:
             lines.append(f"Wash %: {result.wash_percentage}")
         if result.wash_amount_per_share is not None:
@@ -144,8 +150,11 @@ class ScreenEngine:
         non_perm_income_ratio = self._ratio(
             financials.non_permissible_income, financials.total_income
         )
-        tangible_assets_ratio = self._ratio(
+        tangible_assets_ratio_assets = self._ratio(
             financials.tangible_assets, financials.total_assets
+        )
+        tangible_assets_ratio_market = self._ratio(
+            financials.tangible_assets, financials.market_cap
         )
 
         ratios = {
@@ -155,6 +164,9 @@ class ScreenEngine:
                 financials.non_permissible_income, financials.total_income
             ),
             "tangible_assets_pct": self._pct(financials.tangible_assets, financials.total_assets),
+            "tangible_assets_pct_market_cap": self._pct(
+                financials.tangible_assets, financials.market_cap
+            ),
         }
 
         reason_codes = []
@@ -167,7 +179,13 @@ class ScreenEngine:
 
         compliant = True
 
-        if debt_ratio is None or deposits_ratio is None or non_perm_income_ratio is None or tangible_assets_ratio is None:
+        if (
+            debt_ratio is None
+            or deposits_ratio is None
+            or non_perm_income_ratio is None
+            or tangible_assets_ratio_assets is None
+            or tangible_assets_ratio_market is None
+        ):
             return ScreeningResult(
                 ticker=ticker,
                 compliant=False,
@@ -190,7 +208,7 @@ class ScreenEngine:
         if non_perm_income_ratio > self.thresholds["non_perm_income_pct"]:
             compliant = False
             reason_codes.append("non_permissible_income_exceeded")
-        if tangible_assets_ratio < self.thresholds["tangible_assets_pct"]:
+        if tangible_assets_ratio_assets < self.thresholds["tangible_assets_pct"]:
             compliant = False
             reason_codes.append("tangible_assets_below_threshold")
 
@@ -211,6 +229,20 @@ class ScreenEngine:
                         Decimal("0.0001"), rounding=ROUND_HALF_UP
                     )
 
+        threshold = self.thresholds["tangible_assets_pct"]
+        methodologies = {
+            "book_value": {
+                "compliant": tangible_assets_ratio_assets >= threshold,
+                "tangible_assets_pct": ratios.get("tangible_assets_pct"),
+                "threshold": str((threshold * Decimal("100")).quantize(Decimal("0.01"))),
+            },
+            "market_cap": {
+                "compliant": tangible_assets_ratio_market >= threshold,
+                "tangible_assets_pct": ratios.get("tangible_assets_pct_market_cap"),
+                "threshold": str((threshold * Decimal("100")).quantize(Decimal("0.01"))),
+            },
+        }
+
         result = ScreeningResult(
             ticker=ticker,
             compliant=compliant,
@@ -223,6 +255,7 @@ class ScreenEngine:
             report="",
             investor_wash_amount=investor_wash,
             estimation_notes=getattr(financials, "estimation_notes", []),
+            methodologies=methodologies,
         )
         result.report = self._report(result)
         return result

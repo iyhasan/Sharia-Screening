@@ -144,16 +144,6 @@ class SecXbrlSource:
             elif total_assets is not None and goodwill is not None and intangibles is not None:
                 tangible_assets = total_assets - goodwill - intangibles
 
-        if total_assets is not None and cash is not None:
-            alt = total_assets - cash
-            if short_term_investments is not None:
-                alt = alt - short_term_investments
-            if goodwill is not None:
-                alt = alt - goodwill
-            if intangibles is not None:
-                alt = alt - intangibles
-            if tangible_assets is None or alt > tangible_assets:
-                tangible_assets = alt
 
         interest_bearing_debt = self._sum_facts(
             facts,

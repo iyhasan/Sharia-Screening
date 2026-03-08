@@ -41,3 +41,4 @@ class ScreeningResult:
     report: str
     investor_wash_amount: Optional[Decimal] = None
     estimation_notes: List[str] = field(default_factory=list)
+    methodologies: Dict[str, dict] = field(default_factory=dict)

@@ -105,6 +105,7 @@ def main() -> None:
                 "citations": result.citations,
                 "report": result.report,
                 "estimation_notes": result.estimation_notes,
+                "methodologies": result.methodologies,
             }
         )
 

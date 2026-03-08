@@ -29,7 +29,6 @@ The **unified provider** uses SEC filings + yfinance market data. Some required 
 **Heuristic:**
 - Use **Net Tangible Assets** when reported.
 - Otherwise, sum **PPE + Inventory + Receivables + Operating Lease ROU Assets** when available.
-- If still missing, use **Total Assets − (Cash + Short‑term Investments + Goodwill + Intangibles)**.
 
 **Rationale:** This uses reported line items to approximate tangible/operating assets without manual input.
 
