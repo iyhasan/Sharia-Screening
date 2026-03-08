@@ -1,0 +1,42 @@
+{
+  "companies": {
+    "AAPL": {
+      "profile": {
+        "name": "Apple Inc.",
+        "sector": "Technology",
+        "industry": "Consumer Electronics",
+        "prohibited_activities": []
+      },
+      "financials": {
+        "market_cap": 2500000000000,
+        "interest_bearing_debt": 110000000000,
+        "interest_bearing_deposits": 40000000000,
+        "total_income": 383000000000,
+        "non_permissible_income": 1000000000,
+        "total_assets": 352000000000,
+        "tangible_assets": 140000000000,
+        "outstanding_shares": 15600000000,
+        "as_of": "2025-12-31"
+      }
+    },
+    "SAMPLEHARAM": {
+      "profile": {
+        "name": "Sample Riba Bank",
+        "sector": "Financials",
+        "industry": "Banking",
+        "prohibited_activities": ["conventional banking", "riba"]
+      },
+      "financials": {
+        "market_cap": 100000000000,
+        "interest_bearing_debt": 70000000000,
+        "interest_bearing_deposits": 60000000000,
+        "total_income": 10000000000,
+        "non_permissible_income": 8000000000,
+        "total_assets": 200000000000,
+        "tangible_assets": 40000000000,
+        "outstanding_shares": 5000000000,
+        "as_of": "2025-12-31"
+      }
+    }
+  }
+}
