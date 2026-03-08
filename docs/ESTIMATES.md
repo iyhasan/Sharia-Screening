@@ -15,7 +15,7 @@ The **unified provider** uses SEC filings + yfinance market data. Some required 
 **Goal:** Estimate non‑permissible income for purification and the 5% screen.
 
 **Heuristic (priority order):**
-1. **Interest income from SEC** (if reported) → treated as non‑permissible.
+1. **Interest income from SEC** (interest‑specific tags only) → treated as non‑permissible.
 2. **Segment revenues** from SEC XBRL → prohibited segments summed and added.
 3. If neither exists, fall back to **business summary keyword** estimate:
    - Prohibited keyword match → **5% of total income**
