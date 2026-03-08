@@ -29,7 +29,7 @@ def generate_dot_diagram():
     subgraph cluster_legend {
         label="LEGEND";
         style=filled;
-        color=#f5f5f5;
+        color="#f5f5f5";
         
         legend_start [label="▶ Start", shape=box, style=filled, fillcolor="#63a4ff", fontcolor="white"];
         legend_decision [label="▶ Decision", shape=diamond, style=filled, fillcolor="#ffb74d"];
