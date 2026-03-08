@@ -36,6 +36,12 @@ def test_single_stock(engine: ScreenEngine, symbol: str):
 
     result = engine.screen(symbol)
     print(result.report)
+
+    if result.methodologies:
+        print("Methodology outcomes:")
+        for name, payload in result.methodologies.items():
+            print(f"  - {name}: status={payload.get('status')}, ratios={payload.get('ratios')}")
+
     if result.estimation_notes:
         print("Estimation notes:")
         for note in result.estimation_notes:
