@@ -59,7 +59,8 @@ def test_batch_symbols(engine: ScreenEngine, symbols: list):
         result = engine.screen(symbol)
         results.append(result)
         status_icon = "✅" if result.status == "compliant" else ("❌" if result.status == "non_compliant" else "⚠️")
-        print(f"{status_icon} {symbol}: status={result.status}")
+        reason = ", ".join(result.reason_codes) if result.reason_codes else ""
+        print(f"{status_icon} {symbol}: status={result.status} {f'| reasons: {reason}' if reason else ''}")
 
     print(f"\n{'='*80}")
     print("📊 BATCH RESULTS SUMMARY")
