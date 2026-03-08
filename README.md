@@ -36,7 +36,7 @@ sharia-screener --tickers AAPL,MSFT --provider local --data data/example.json
 sharia-screener --tickers AAPL,MSFT --provider local --data data/example.json --holdings '{"AAPL": 120, "MSFT": 50}'
 
 # Use unified provider (SEC + yfinance, no supplemental)
-sharia-screener --ticker AAPL --provider combined \
+sharia-screener --ticker AAPL --provider unified \
   --segment-rules data/segment_rules.json \
   --sec-user-agent "Your Name contact@example.com"
 ```

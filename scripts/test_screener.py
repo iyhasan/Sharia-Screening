@@ -2,10 +2,7 @@
 """
 Test script for Sharia Compliance Screener (new engine)
 
-Uses the same provider logic as the CLI. Configure via env vars:
-- SHARIA_PROVIDER (local | combined)
-- SHARIA_DATA_PATH
-- SHARIA_JSON (inline JSON payload for local provider)
+Uses the unified provider only. Configure via env vars:
 - SHARIA_SEGMENT_RULES_PATH
 - SEC_USER_AGENT
 """
@@ -15,13 +12,9 @@ import sys
 import json
 from pathlib import Path
 
-from sharia_screener.providers.local_json import LocalJsonProvider
 from sharia_screener.screening import ScreenEngine
 
 def build_engine() -> ScreenEngine:
-    provider = os.getenv("SHARIA_PROVIDER", "local")
-    data_path = os.getenv("SHARIA_DATA_PATH", str(Path(__file__).parent.parent / "data" / "example.json"))
-    inline_json = os.getenv("SHARIA_JSON")
     segment_rules_path = os.getenv("SHARIA_SEGMENT_RULES_PATH")
     sec_user_agent = os.getenv("SEC_USER_AGENT")
 
@@ -30,14 +23,8 @@ def build_engine() -> ScreenEngine:
         with open(segment_rules_path, "r", encoding="utf-8") as f:
             segment_rules = json.load(f)
 
-    if provider == "local":
-        if inline_json:
-            provider_obj = LocalJsonProvider(json.loads(inline_json))
-        else:
-            provider_obj = LocalJsonProvider(data_path)
-    else:
-        from sharia_screener.providers.unified_provider import UnifiedProvider
-        provider_obj = UnifiedProvider(sec_user_agent=sec_user_agent, segment_rules=segment_rules)
+    from sharia_screener.providers.unified_provider import UnifiedProvider
+    provider_obj = UnifiedProvider(sec_user_agent=sec_user_agent, segment_rules=segment_rules)
 
     return ScreenEngine(provider=provider_obj)
 

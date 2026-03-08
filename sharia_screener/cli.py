@@ -31,7 +31,7 @@ def main() -> None:
         "--provider",
         type=str,
         default=os.getenv("SHARIA_PROVIDER", "local"),
-        choices=["local", "combined"],
+        choices=["local", "unified"],
         help="Data provider to use",
     )
     parser.add_argument(
