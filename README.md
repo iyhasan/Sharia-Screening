@@ -41,6 +41,11 @@ sharia-screener --ticker AAPL --provider sec \
   --supplemental data/sec_supplemental.json \
   --segment-rules data/segment_rules.json \
   --sec-user-agent "Your Name contact@example.com"
+
+# Use combined (SEC + yfinance, no supplemental)
+sharia-screener --ticker AAPL --provider combined \
+  --segment-rules data/segment_rules.json \
+  --sec-user-agent "Your Name contact@example.com"
 ```
 
 ## Data input format
@@ -58,6 +63,9 @@ SEC XBRL provides core financials (assets, revenue, debt, shares) but not non-pe
 - `revenue_segments` (rules-based classification using `segment_rules.json`)
 - explicit overrides for `non_permissible_income` and `interest_bearing_deposits`
 - optional assumption: `interest_bearing_deposits_from_cash: true` (explicit opt-in)
+
+### Combined provider (SEC + yfinance)
+The combined provider pulls **market data from yfinance** and **financials from SEC**. It returns `insufficient_data` if required fields (like non-permissible income or interest-bearing deposits) cannot be sourced without assumptions.
 
 ## Library usage
 ```python

@@ -9,6 +9,7 @@ from typing import Dict
 from sharia_screener.providers.local_json import LocalJsonProvider
 from sharia_screener.providers.yfinance_provider import YFinanceProvider
 from sharia_screener.providers.sec_xbrl_provider import SecXbrlProvider
+from sharia_screener.providers.combined_provider import CombinedProvider
 from sharia_screener.screening import ScreenEngine
 
 
@@ -32,7 +33,7 @@ def main() -> None:
         "--provider",
         type=str,
         default=os.getenv("SHARIA_PROVIDER", "local"),
-        choices=["local", "yfinance", "sec"],
+        choices=["local", "yfinance", "sec", "combined"],
         help="Data provider to use",
     )
     parser.add_argument(
@@ -84,12 +85,15 @@ def main() -> None:
     elif args.provider == "yfinance":
         supplemental = load_json_file(args.supplemental)
         provider = YFinanceProvider(supplemental=supplemental)
-    else:
+    elif args.provider == "sec":
         supplemental = load_json_file(args.supplemental)
         segment_rules = load_json_file(args.segment_rules)
         provider = SecXbrlProvider(
             supplemental=supplemental, user_agent=args.sec_user_agent, segment_rules=segment_rules
         )
+    else:
+        segment_rules = load_json_file(args.segment_rules)
+        provider = CombinedProvider(sec_user_agent=args.sec_user_agent, segment_rules=segment_rules)
 
     engine = ScreenEngine(provider=provider)
 

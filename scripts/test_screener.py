@@ -43,10 +43,13 @@ def build_engine() -> ScreenEngine:
         provider_obj = LocalJsonProvider(data_path)
     elif provider == "yfinance":
         provider_obj = YFinanceProvider(supplemental=supplemental)
-    else:
+    elif provider == "sec":
         provider_obj = SecXbrlProvider(
             supplemental=supplemental, user_agent=sec_user_agent, segment_rules=segment_rules
         )
+    else:
+        from sharia_screener.providers.combined_provider import CombinedProvider
+        provider_obj = CombinedProvider(sec_user_agent=sec_user_agent, segment_rules=segment_rules)
 
     return ScreenEngine(provider=provider_obj)
 
