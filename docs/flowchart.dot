@@ -1,0 +1,78 @@
+digraph ShariaCompliance {
+    rankdir=LR;
+    node [fontname="Arial", fontsize=11];
+    edge [fontname="Arial", fontsize=10];
+    label="Islamic Sharia Compliance Flowchart (AAOIFI)";
+    fontsize=14;
+    
+    // Legend
+    subgraph cluster_legend {
+        label="LEGEND"; style=filled color=#f0f0f0;
+        l_start [label="▶ Start", shape=box, style=filled fillcolor="#63a4ff" fontcolor="white"];
+        l_dec [label="▶ Decision", shape=diamond, style=filled fillcolor="#ffb74d"];
+        l_rep [label="❌ Reject", shape=box, style=filled fillcolor="#ffccec" fontcolor="#d32f2f"];
+        l_pas [label="✅ Pass", shape=box, style=filled fillcolor="#c8e6c9" fontcolor="#2e7d32"];
+        l_con [label="⚠️ Conditional", shape=box, style=filled fillcolor="#fff59d" fontcolor="#f57f17"];
+        l_start -> l_dec; l_dec -> l_rep; l_rep -> l_pas; l_pas -> l_con;
+    }
+    
+    // Start node
+    start [label="Stock Input", shape=box, style=filled fillcolor="#63a4ff" fontcolor="white"];
+    
+    // Business Check
+    subgraph cluster_business {
+        label="Business Sector Filter"; style=rounded color=#e0e0e0;
+        sector [label="Prohibited?
+(Insurers, Banks,
+Gambling, Alcohol)", shape=diamond, fillcolor="#ffca28" fontcolor="black"];
+    }
+    
+    // Keywords Check  
+    subgraph cluster_keywords {
+        label="Name Scan"; style=rounded color=#e0e0e0;
+        keywords [label="Forbidden Terms?
+(Casino, Weapons,
+Military, Adult)", shape=diamond, fillcolor="#ffca28" fontcolor="black"];
+    }
+    
+    // Rejection boxes (Red)
+    rej_sector [label="❌ REJECTED
+Prohibited Sector", shape=box, style=filled fillcolor="#ffcdd2" fontcolor="#c62828"];
+    rej_keywords [label="❌ REJECTED
+Unethical Business", shape=box, style=filled fillcolor="#ffcdd2" fontcolor="#c62828"];
+    
+    // Financial Check
+    subgraph cluster_financial {
+        label="Financial Screening"; style=rounded color=#e0e0e0;
+        debt [label="Debt/Mkt Cap <33%?", shape=diamond, fillcolor="#ffca28" fontcolor="black"];
+    }
+    
+    # Compliant box (Green)
+    compl [label="✅ COMPLIANT
+Purification: 0%", shape=box, style=filled fillcolor="#c8e6c9" fontcolor="#2e7d32"];
+    
+    # Conditional box (Yellow)
+    cond [label="⚠️ CONDITIONAL
+High Debt", shape=box, style=filled fillcolor="#fff59d" fontcolor="#f57f17"];
+    
+    # Purification calculation
+    purify [label="Calculate:
+min(10%, max(2.5%, debt/330))", shape=box, style=filled fillcolor="#ffe082" fontcolor="black"];
+    
+    # Final action (Blue)
+    action [label="Donate purification% to charity", shape=box, style=filled fillcolor="#bbdefb" fontcolor="#1565c0"];
+    
+    # Connections
+    start -> sector;
+    sector -> keywords [label="✅ Allowed Sector"];
+    sector -> rej_sector [label="❌ Prohibited", color="#d32f2f" style=dashed];
+    
+    keywords -> debt [label="✅ Clean Business"];
+    keywords -> rej_keywords [label="❌ Forbidden", color="#d32f2f" style=dashed];
+    
+    debt -> compl [label="YES (<33%)"];
+    debt -> cond [label="NO (≥33%)", color="#f57c00" style=dashed];
+    
+    cond -> purify;
+    purify -> action;
+}
