@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Dict
 
 from sharia_screener.providers.local_json import LocalJsonProvider
-from sharia_screener.providers.combined_provider import CombinedProvider
+from sharia_screener.providers.unified_provider import UnifiedProvider
 from sharia_screener.screening import ScreenEngine
 
 
@@ -84,7 +84,7 @@ def main() -> None:
             provider = LocalJsonProvider(args.data)
     else:
         segment_rules = load_json_file(args.segment_rules)
-        provider = CombinedProvider(sec_user_agent=args.sec_user_agent, segment_rules=segment_rules)
+        provider = UnifiedProvider(sec_user_agent=args.sec_user_agent, segment_rules=segment_rules)
 
     engine = ScreenEngine(provider=provider)
 

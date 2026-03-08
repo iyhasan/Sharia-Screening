@@ -1,6 +1,6 @@
-# Estimation Notes (Combined Provider)
+# Estimation Notes (Unified Provider)
 
-The **combined provider** uses SEC filings + yfinance market data. Some required fields are not explicitly reported in public filings, so we apply transparent, documented heuristics. These estimates are always flagged in the output under `estimation_notes`.
+The **unified provider** uses SEC filings + yfinance market data. Some required fields are not explicitly reported in public filings, so we apply transparent, documented heuristics. These estimates are always flagged in the output under `estimation_notes`.
 
 ## 1) Interest‑bearing deposits
 **Goal:** Estimate interest‑bearing deposits for the AAOIFI ratio screen.

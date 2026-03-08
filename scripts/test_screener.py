@@ -32,8 +32,8 @@ def build_engine() -> ScreenEngine:
     if provider == "local":
         provider_obj = LocalJsonProvider(data_path)
     else:
-        from sharia_screener.providers.combined_provider import CombinedProvider
-        provider_obj = CombinedProvider(sec_user_agent=sec_user_agent, segment_rules=segment_rules)
+        from sharia_screener.providers.unified_provider import UnifiedProvider
+        provider_obj = UnifiedProvider(sec_user_agent=sec_user_agent, segment_rules=segment_rules)
 
     return ScreenEngine(provider=provider_obj)
 

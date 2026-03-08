@@ -35,7 +35,7 @@ sharia-screener --tickers AAPL,MSFT --provider local --data data/example.json
 # Provide holdings (per-ticker share count)
 sharia-screener --tickers AAPL,MSFT --provider local --data data/example.json --holdings '{"AAPL": 120, "MSFT": 50}'
 
-# Use combined (SEC + yfinance, no supplemental)
+# Use unified provider (SEC + yfinance, no supplemental)
 sharia-screener --ticker AAPL --provider combined \
   --segment-rules data/segment_rules.json \
   --sec-user-agent "Your Name contact@example.com"
@@ -48,8 +48,8 @@ Template files live in `config/`:
 - `config/supplemental.template.json`
 - `config/segment_rules.template.json`
 
-### Combined provider (SEC + yfinance)
-The combined provider pulls **market data from yfinance** and **financials from SEC**, then applies **best‑estimate heuristics** for fields not explicitly reported. See `docs/ESTIMATES.md` for full details.
+### Unified provider (SEC + yfinance)
+The unified provider pulls **market data from yfinance** and **financials from SEC**, then applies **best‑estimate heuristics** for fields not explicitly reported. See `docs/ESTIMATES.md` for full details.
 
 ## Library usage
 ```python
