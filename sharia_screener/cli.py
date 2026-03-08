@@ -46,6 +46,11 @@ def main() -> None:
         help="SEC requires a descriptive User-Agent (or set SEC_USER_AGENT env var)",
     )
     parser.add_argument(
+        "--segment-rules",
+        type=str,
+        help="Path to segment classification rules (SEC provider)",
+    )
+    parser.add_argument(
         "--holdings",
         type=str,
         help="JSON map of holdings, e.g. '{""AAPL"": 10}'",
@@ -72,7 +77,10 @@ def main() -> None:
         provider = YFinanceProvider(supplemental=supplemental)
     else:
         supplemental = load_json_file(args.supplemental)
-        provider = SecXbrlProvider(supplemental=supplemental, user_agent=args.sec_user_agent)
+        segment_rules = load_json_file(args.segment_rules)
+        provider = SecXbrlProvider(
+            supplemental=supplemental, user_agent=args.sec_user_agent, segment_rules=segment_rules
+        )
 
     engine = ScreenEngine(provider=provider)
 

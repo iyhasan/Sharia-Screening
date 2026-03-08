@@ -16,11 +16,17 @@ class SecXbrlProvider(DataProvider):
     TICKER_MAP_URL = "https://www.sec.gov/files/company_tickers.json"
     FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
 
-    def __init__(self, supplemental: Optional[dict] = None, user_agent: Optional[str] = None):
+    def __init__(
+        self,
+        supplemental: Optional[dict] = None,
+        user_agent: Optional[str] = None,
+        segment_rules: Optional[dict] = None,
+    ):
         self.supplemental = supplemental or {}
         self.user_agent = user_agent or os.getenv(
             "SEC_USER_AGENT", "sharia-screener/0.1 (contact: support@example.com)"
         )
+        self.segment_rules = segment_rules or {}
         self._ticker_map = None
 
     def _fetch_json(self, url: str) -> dict:
@@ -106,13 +112,19 @@ class SecXbrlProvider(DataProvider):
     def _classify_non_permissible(self, segments: list[dict]) -> Optional[Decimal]:
         if not segments:
             return None
+        rules = self.segment_rules or {}
+        prohibited = [k.lower() for k in rules.get("prohibited_keywords", [])] or [k.lower() for k in PROHIBITED_KEYWORDS]
+        allowed = [k.lower() for k in rules.get("allowed_keywords", [])]
+
         total = Decimal("0")
         for seg in segments:
             name = str(seg.get("name", "")).lower()
             revenue = seg.get("revenue")
             if revenue is None:
                 continue
-            if any(keyword in name for keyword in PROHIBITED_KEYWORDS):
+            if any(k in name for k in allowed):
+                continue
+            if any(k in name for k in prohibited):
                 total += Decimal(str(revenue))
         return total
 

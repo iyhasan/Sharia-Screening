@@ -1,0 +1,20 @@
+{
+  "prohibited_keywords": [
+    "alcohol",
+    "liquor",
+    "pork",
+    "swine",
+    "gambling",
+    "casino",
+    "riba",
+    "interest",
+    "conventional banking",
+    "tobacco",
+    "weapons",
+    "adult"
+  ],
+  "allowed_keywords": [
+    "islamic finance",
+    "halal"
+  ]
+}
