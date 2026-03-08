@@ -52,7 +52,7 @@ Template files live in `config/`:
 ### Unified provider (SEC + yfinance)
 The unified provider pulls **market data from yfinance** and **financials from SEC**, then applies **best‑estimate heuristics** for fields not explicitly reported. See `docs/ESTIMATES.md` for full details.
 
-Output includes `methodologies.book_value` (ratios vs total assets) and `methodologies.market_cap` (ratios vs market cap). Tangible assets always use **total assets** in both methodologies.
+Output includes `methodologies.aaoifi_book_method` (ratios vs total assets) and `methodologies.market_cap_method` (ratios vs market cap). Tangible assets always use **total assets** in both methodologies.
 
 ## Library usage
 ```python

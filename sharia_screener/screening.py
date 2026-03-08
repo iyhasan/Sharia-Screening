@@ -74,10 +74,10 @@ class ScreenEngine:
             )
         )
         if result.methodologies:
-            book = result.methodologies.get("book_value", {})
-            market = result.methodologies.get("market_cap", {})
+            book = result.methodologies.get("aaoifi_book_method", {})
+            market = result.methodologies.get("market_cap_method", {})
             lines.append(
-                f"Methodologies: book_value={book.get('compliant')}, market_cap={market.get('compliant')}"
+                f"Methodologies: aaoifi_book_method={book.get('compliant')}, market_cap_method={market.get('compliant')}"
             )
         if result.wash_percentage is not None:
             lines.append(f"Wash %: {result.wash_percentage}")
@@ -261,7 +261,7 @@ class ScreenEngine:
         )
 
         methodologies = {
-            "book_value": {
+            "aaoifi_book_method": {
                 "compliant": book_ok,
                 "status": "compliant" if book_ok else "non_compliant",
                 "reason_codes": book_codes,
@@ -272,7 +272,7 @@ class ScreenEngine:
                     "tangible_assets_pct": ratios.get("tangible_assets_pct"),
                 },
             },
-            "market_cap": {
+            "market_cap_method": {
                 "compliant": market_ok,
                 "status": "compliant" if market_ok else "non_compliant",
                 "reason_codes": market_codes,
