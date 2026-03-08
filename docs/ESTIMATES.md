@@ -14,11 +14,14 @@ The **unified provider** uses SEC filings + yfinance market data. Some required 
 ## 2) Non‑permissible income
 **Goal:** Estimate non‑permissible income for purification and the 5% screen.
 
-**Heuristic:**
-- If the company’s **business summary** contains any prohibited keywords (see `segment_rules.json`), estimate **5% of total income** as non‑permissible.
-- If no prohibited keywords are found, estimate **0%**.
+**Heuristic (priority order):**
+1. **Interest income from SEC** (if reported) → treated as non‑permissible.
+2. **Segment revenues** from SEC XBRL → prohibited segments summed and added.
+3. If neither exists, fall back to **business summary keyword** estimate:
+   - Prohibited keyword match → **5% of total income**
+   - No match → **0%**
 
-**Rationale:** Public filings rarely provide a direct non‑permissible income number. The 5% cap aligns with AAOIFI’s threshold; we use it as a conservative estimate when prohibited activities are detected in the business description.
+**Rationale:** Interest income is explicitly reported in filings and is a legitimate non‑permissible component. Segment-level revenue provides a more precise split when available; otherwise, the keyword fallback is a conservative proxy.
 
 ## 3) Tangible assets
 **Goal:** Determine tangible assets for the 33.33% asset‑composition screen.

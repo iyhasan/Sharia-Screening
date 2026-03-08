@@ -75,6 +75,8 @@ class UnifiedProvider(DataProvider):
         as_of = sec_fin.get("as_of")
 
         estimation_notes = []
+        if market_cap is not None and as_of:
+            estimation_notes.append(f"market cap is current; financials as of {as_of}")
 
         # Estimate interest-bearing deposits using cash equivalents
         cash_equivalents = sec_fin.get("cash_equivalents") or yf_fin.get("cash_equivalents")
@@ -86,13 +88,23 @@ class UnifiedProvider(DataProvider):
             estimation_notes.append("interest_bearing_deposits assumed 0 due to missing cash data")
 
         # Estimate non-permissible income
-        non_permissible_income = None
+        non_permissible_income = Decimal("0")
+        has_non_perm_signal = False
+
+        interest_income = sec_fin.get("interest_income")
+        if interest_income is not None:
+            non_permissible_income += interest_income
+            has_non_perm_signal = True
+            estimation_notes.append("non_permissible_income includes SEC-reported interest income")
+
         segments = self.sec.get_revenue_segments(ticker)
         segment_estimate = self._estimate_non_permissible_from_segments(segments)
         if segment_estimate is not None:
-            non_permissible_income = segment_estimate
-            estimation_notes.append("non_permissible_income derived from SEC segment revenues")
-        elif total_income is not None:
+            non_permissible_income += segment_estimate
+            has_non_perm_signal = True
+            estimation_notes.append("non_permissible_income includes prohibited SEC segment revenues")
+
+        if not has_non_perm_signal and total_income is not None:
             summary = (yf_profile.get("business_summary") or "").lower()
             prohibited, allowed = self._segment_rules()
             if any(k in summary for k in allowed):

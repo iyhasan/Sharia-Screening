@@ -110,11 +110,35 @@ class SecXbrlSource:
 
         total_assets, _ = self._latest_fact(facts, ["Assets"])
         tangible_assets, _ = self._latest_fact(facts, ["NetTangibleAssets"])
-        if tangible_assets is None and total_assets is not None:
-            goodwill, _ = self._latest_fact(facts, ["Goodwill"])
-            intangibles, _ = self._latest_fact(facts, ["IntangibleAssets"])
-            if goodwill is not None and intangibles is not None:
-                tangible_assets = total_assets - goodwill - intangibles
+
+        # Components for tangible assets (fallback)
+        ppe, _ = self._latest_fact(
+            facts,
+            [
+                "PropertyPlantAndEquipmentNet",
+                "PropertyPlantAndEquipmentNetIncludingCapitalizedInterest",
+            ],
+        )
+        inventory, _ = self._latest_fact(facts, ["InventoryNet", "InventoryFinishedGoods"])
+        receivables, _ = self._latest_fact(
+            facts,
+            [
+                "AccountsReceivableNetCurrent",
+                "AccountsReceivableNet",
+                "ReceivablesNetCurrent",
+            ],
+        )
+        operating_lease_assets, _ = self._latest_fact(facts, ["OperatingLeaseRightOfUseAsset"])
+
+        if tangible_assets is None:
+            parts = [p for p in [ppe, inventory, receivables, operating_lease_assets] if p is not None]
+            if parts:
+                tangible_assets = sum(parts)
+            elif total_assets is not None:
+                goodwill, _ = self._latest_fact(facts, ["Goodwill"])
+                intangibles, _ = self._latest_fact(facts, ["IntangibleAssets"])
+                if goodwill is not None and intangibles is not None:
+                    tangible_assets = total_assets - goodwill - intangibles
 
         interest_bearing_debt = self._sum_facts(
             facts,
@@ -129,6 +153,17 @@ class SecXbrlSource:
         cash, _ = self._latest_fact(facts, ["CashAndCashEquivalentsAtCarryingValue"])
         shares_outstanding, _ = self._latest_fact(facts, ["EntityCommonStockSharesOutstanding"], unit="shares")
 
+        interest_income = self._sum_facts(
+            facts,
+            [
+                "InterestIncome",
+                "InterestIncomeNonoperating",
+                "InvestmentIncomeInterest",
+                "InterestAndDividendIncomeOperating",
+                "InterestAndOtherIncome",
+            ],
+        )
+
         return {
             "total_income": total_income,
             "total_assets": total_assets,
@@ -136,6 +171,7 @@ class SecXbrlSource:
             "interest_bearing_debt": interest_bearing_debt,
             "cash_equivalents": cash,
             "shares_outstanding": shares_outstanding,
+            "interest_income": interest_income,
             "as_of": as_of,
         }
 
