@@ -47,3 +47,4 @@ exclude = ["src*", "tests*"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
+testpaths = ["tests"]
