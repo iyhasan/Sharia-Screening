@@ -210,4 +210,5 @@ class SecXbrlProvider(DataProvider):
             tangible_assets=Decimal(str(tangible_assets)),
             outstanding_shares=Decimal(str(shares_outstanding)),
             as_of=str(as_of),
+            estimation_notes=[],
         )

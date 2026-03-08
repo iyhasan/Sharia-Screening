@@ -16,37 +16,21 @@ import json
 from pathlib import Path
 
 from sharia_screener.providers.local_json import LocalJsonProvider
-from sharia_screener.providers.yfinance_provider import YFinanceProvider
-from sharia_screener.providers.sec_xbrl_provider import SecXbrlProvider
 from sharia_screener.screening import ScreenEngine
 
 def build_engine() -> ScreenEngine:
     provider = os.getenv("SHARIA_PROVIDER", "local")
     data_path = os.getenv("SHARIA_DATA_PATH", str(Path(__file__).parent.parent / "data" / "example.json"))
-    supplemental_path = os.getenv("SHARIA_SUPPLEMENTAL_PATH")
     segment_rules_path = os.getenv("SHARIA_SEGMENT_RULES_PATH")
     sec_user_agent = os.getenv("SEC_USER_AGENT")
 
-    supplemental = {}
-    if supplemental_path and Path(supplemental_path).exists():
-        import json
-        with open(supplemental_path, "r", encoding="utf-8") as f:
-            supplemental = json.load(f)
-
     segment_rules = {}
     if segment_rules_path and Path(segment_rules_path).exists():
-        import json
         with open(segment_rules_path, "r", encoding="utf-8") as f:
             segment_rules = json.load(f)
 
     if provider == "local":
         provider_obj = LocalJsonProvider(data_path)
-    elif provider == "yfinance":
-        provider_obj = YFinanceProvider(supplemental=supplemental)
-    elif provider == "sec":
-        provider_obj = SecXbrlProvider(
-            supplemental=supplemental, user_agent=sec_user_agent, segment_rules=segment_rules
-        )
     else:
         from sharia_screener.providers.combined_provider import CombinedProvider
         provider_obj = CombinedProvider(sec_user_agent=sec_user_agent, segment_rules=segment_rules)

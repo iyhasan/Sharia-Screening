@@ -79,6 +79,8 @@ class ScreenEngine:
             lines.append(f"Wash per share: {result.wash_amount_per_share}")
         if result.investor_wash_amount is not None:
             lines.append(f"Investor wash amount: {result.investor_wash_amount}")
+        if result.estimation_notes:
+            lines.append("Estimates: " + "; ".join(result.estimation_notes))
         return " ".join(lines)
 
     def screen(self, ticker: str, shares_held: Optional[Decimal] = None) -> ScreeningResult:
@@ -102,6 +104,7 @@ class ScreenEngine:
                 wash_amount_per_share=None,
                 citations=[AAOIFI_CITATIONS["data_period"]],
                 report=f"{ticker}: insufficient data to evaluate.",
+                estimation_notes=[],
             )
 
         # Sector/activity exclusions
@@ -129,6 +132,7 @@ class ScreenEngine:
                 wash_amount_per_share=None,
                 citations=[AAOIFI_CITATIONS["sector_exclusion"]],
                 report="",
+                estimation_notes=[],
             )
             result.report = self._report(result)
             return result
@@ -174,6 +178,7 @@ class ScreenEngine:
                 wash_amount_per_share=None,
                 citations=[AAOIFI_CITATIONS["data_period"]],
                 report=f"{ticker}: insufficient data to evaluate.",
+                estimation_notes=getattr(financials, "estimation_notes", []),
             )
 
         if debt_ratio > self.thresholds["debt_to_market_cap"]:
@@ -217,6 +222,7 @@ class ScreenEngine:
             citations=citations + [AAOIFI_CITATIONS["purification"]],
             report="",
             investor_wash_amount=investor_wash,
+            estimation_notes=getattr(financials, "estimation_notes", []),
         )
         result.report = self._report(result)
         return result

@@ -25,6 +25,7 @@ class Financials:
     tangible_assets: Decimal
     outstanding_shares: Decimal
     as_of: str
+    estimation_notes: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -39,3 +40,4 @@ class ScreeningResult:
     citations: List[str]
     report: str
     investor_wash_amount: Optional[Decimal] = None
+    estimation_notes: List[str] = field(default_factory=list)

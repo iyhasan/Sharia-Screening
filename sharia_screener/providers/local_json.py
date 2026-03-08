@@ -10,10 +10,16 @@ from sharia_screener.providers.base import DataProvider
 
 
 class LocalJsonProvider(DataProvider):
-    def __init__(self, path: str | Path):
-        self.path = Path(path)
-        with self.path.open("r", encoding="utf-8") as f:
-            self.payload = json.load(f)
+    def __init__(self, path_or_payload: str | Path | dict):
+        if isinstance(path_or_payload, (str, Path)):
+            self.path = Path(path_or_payload)
+            with self.path.open("r", encoding="utf-8") as f:
+                self.payload = json.load(f)
+        elif isinstance(path_or_payload, dict):
+            self.path = None
+            self.payload = path_or_payload
+        else:
+            raise ValueError("LocalJsonProvider expects a file path or dict payload")
 
     def _get(self, ticker: str) -> Optional[dict]:
         return self.payload.get("companies", {}).get(ticker.upper())
@@ -65,4 +71,5 @@ class LocalJsonProvider(DataProvider):
             tangible_assets=Decimal(str(fin.get("tangible_assets"))),
             outstanding_shares=Decimal(str(fin.get("outstanding_shares"))),
             as_of=str(fin.get("as_of")),
+            estimation_notes=[],
         )

@@ -1,0 +1,42 @@
+# Estimation Notes (Combined Provider)
+
+The **combined provider** uses SEC filings + yfinance market data. Some required fields are not explicitly reported in public filings, so we apply transparent, documented heuristics. These estimates are always flagged in the output under `estimation_notes`.
+
+## 1) Interest‑bearing deposits
+**Goal:** Estimate interest‑bearing deposits for the AAOIFI ratio screen.
+
+**Heuristic:**
+- Use **cash and cash equivalents** from yfinance balance sheet when available.
+- If cash is not available, assume **0**.
+
+**Rationale:** Public filings don’t provide a clean “interest‑bearing deposits” tag for non‑financial companies. Cash equivalents are the closest observable proxy. If missing, we avoid guessing and default to 0 (flagged).
+
+## 2) Non‑permissible income
+**Goal:** Estimate non‑permissible income for purification and the 5% screen.
+
+**Heuristic:**
+- If the company’s **business summary** contains any prohibited keywords (see `segment_rules.json`), estimate **5% of total income** as non‑permissible.
+- If no prohibited keywords are found, estimate **0%**.
+
+**Rationale:** Public filings rarely provide a direct non‑permissible income number. The 5% cap aligns with AAOIFI’s threshold; we use it as a conservative estimate when prohibited activities are detected in the business description.
+
+## 3) Tangible assets
+**Goal:** Determine tangible assets for the 33.33% asset‑composition screen.
+
+**Heuristic:**
+- Use **Net Tangible Assets** when reported.
+- Otherwise, use **Total Assets − Goodwill − Intangibles** if those tags are available.
+
+**Rationale:** This is derived directly from reported values rather than guessed.
+
+---
+
+### Output Transparency
+All estimates are explicitly noted in the output under `estimation_notes`, for example:
+
+```json
+"estimation_notes": [
+  "interest_bearing_deposits estimated from cash and cash equivalents",
+  "non_permissible_income estimated at 0% (no prohibited keywords found)"
+]
+```

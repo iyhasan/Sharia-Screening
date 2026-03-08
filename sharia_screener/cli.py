@@ -7,8 +7,6 @@ from decimal import Decimal
 from typing import Dict
 
 from sharia_screener.providers.local_json import LocalJsonProvider
-from sharia_screener.providers.yfinance_provider import YFinanceProvider
-from sharia_screener.providers.sec_xbrl_provider import SecXbrlProvider
 from sharia_screener.providers.combined_provider import CombinedProvider
 from sharia_screener.screening import ScreenEngine
 
@@ -33,7 +31,7 @@ def main() -> None:
         "--provider",
         type=str,
         default=os.getenv("SHARIA_PROVIDER", "local"),
-        choices=["local", "yfinance", "sec", "combined"],
+        choices=["local", "combined"],
         help="Data provider to use",
     )
     parser.add_argument(
@@ -43,10 +41,9 @@ def main() -> None:
         help="Path to local JSON data (for local provider)",
     )
     parser.add_argument(
-        "--supplemental",
+        "--json",
         type=str,
-        default=os.getenv("SHARIA_SUPPLEMENTAL_PATH"),
-        help="Path to supplemental JSON data (for yfinance/sec providers)",
+        help="Inline JSON payload for local provider (overrides --data)",
     )
     parser.add_argument(
         "--sec-user-agent",
@@ -79,18 +76,12 @@ def main() -> None:
     holdings = parse_holdings(args.holdings) if args.holdings else {}
 
     if args.provider == "local":
-        if not args.data:
-            raise SystemExit("--data is required for local provider")
-        provider = LocalJsonProvider(args.data)
-    elif args.provider == "yfinance":
-        supplemental = load_json_file(args.supplemental)
-        provider = YFinanceProvider(supplemental=supplemental)
-    elif args.provider == "sec":
-        supplemental = load_json_file(args.supplemental)
-        segment_rules = load_json_file(args.segment_rules)
-        provider = SecXbrlProvider(
-            supplemental=supplemental, user_agent=args.sec_user_agent, segment_rules=segment_rules
-        )
+        if args.json:
+            provider = LocalJsonProvider(json.loads(args.json))
+        else:
+            if not args.data:
+                raise SystemExit("--data is required for local provider")
+            provider = LocalJsonProvider(args.data)
     else:
         segment_rules = load_json_file(args.segment_rules)
         provider = CombinedProvider(sec_user_agent=args.sec_user_agent, segment_rules=segment_rules)
@@ -113,6 +104,7 @@ def main() -> None:
                 "investor_wash_amount": str(result.investor_wash_amount) if result.investor_wash_amount is not None else None,
                 "citations": result.citations,
                 "report": result.report,
+                "estimation_notes": result.estimation_notes,
             }
         )
 

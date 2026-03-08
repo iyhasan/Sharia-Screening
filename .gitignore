@@ -34,3 +34,5 @@ Thumbs.db
 output/
 results/
 screenshots/
+scripts/*.dot
+scripts/*.dot.*
