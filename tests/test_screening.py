@@ -6,12 +6,13 @@ from sharia_screener import LocalJsonProvider, ScreenEngine
 from sharia_screener.exceptions import UpstreamDataError, ValidationError
 
 
-def test_screening_compliant():
+def test_screening_expected_result():
     provider = LocalJsonProvider("data/example.json")
     engine = ScreenEngine(provider=provider)
     result = engine.screen("AAPL")
-    assert result.status in {"compliant", "non_compliant"}
     assert result.ticker == "AAPL"
+    assert result.status == "non_compliant"
+    assert "debt_ratio_exceeded" in result.reason_codes
     assert result.ratios["debt_to_market_cap"] is not None
 
 
