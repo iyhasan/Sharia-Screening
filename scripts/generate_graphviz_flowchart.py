@@ -30,7 +30,6 @@ def generate_dot_diagram():
         label="LEGEND";
         style=filled;
         color=#f5f5f5;
-        box_width=0;
         
         legend_start [label="▶ Start", shape=box, style=filled, fillcolor="#63a4ff", fontcolor="white"];
         legend_decision [label="▶ Decision", shape=diamond, style=filled, fillcolor="#ffb74d"];
