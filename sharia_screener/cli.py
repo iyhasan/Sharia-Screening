@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from decimal import Decimal
 from typing import Dict
 
@@ -30,24 +31,32 @@ def main() -> None:
     parser.add_argument(
         "--provider",
         type=str,
-        default="local",
+        default=os.getenv("SHARIA_PROVIDER", "local"),
         choices=["local", "yfinance", "sec"],
         help="Data provider to use",
     )
-    parser.add_argument("--data", type=str, help="Path to local JSON data (for local provider)")
+    parser.add_argument(
+        "--data",
+        type=str,
+        default=os.getenv("SHARIA_DATA_PATH"),
+        help="Path to local JSON data (for local provider)",
+    )
     parser.add_argument(
         "--supplemental",
         type=str,
+        default=os.getenv("SHARIA_SUPPLEMENTAL_PATH"),
         help="Path to supplemental JSON data (for yfinance/sec providers)",
     )
     parser.add_argument(
         "--sec-user-agent",
         type=str,
+        default=os.getenv("SEC_USER_AGENT"),
         help="SEC requires a descriptive User-Agent (or set SEC_USER_AGENT env var)",
     )
     parser.add_argument(
         "--segment-rules",
         type=str,
+        default=os.getenv("SHARIA_SEGMENT_RULES_PATH"),
         help="Path to segment classification rules (SEC provider)",
     )
     parser.add_argument(

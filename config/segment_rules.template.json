@@ -1,0 +1,13 @@
+{
+  "prohibited_keywords": [
+    "alcohol",
+    "gambling",
+    "casino",
+    "tobacco",
+    "weapons"
+  ],
+  "allowed_keywords": [
+    "islamic finance",
+    "halal"
+  ]
+}

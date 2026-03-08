@@ -14,6 +14,14 @@ AAOIFI-based Sharia compliance screening tool. Provides a CLI and a Python libra
 pip install -e .
 ```
 
+## Environment configuration
+Copy `.env.example` to `.env` and set your defaults. The CLI will read these environment variables:
+- `SHARIA_PROVIDER`
+- `SHARIA_DATA_PATH`
+- `SHARIA_SUPPLEMENTAL_PATH`
+- `SHARIA_SEGMENT_RULES_PATH`
+- `SEC_USER_AGENT`
+
 ## CLI usage
 ```bash
 # Single ticker using local JSON data
@@ -37,6 +45,10 @@ sharia-screener --ticker AAPL --provider sec \
 
 ## Data input format
 The CLI supports a **local JSON** data source. See `data/example.json` for the expected structure.
+
+Template files live in `config/`:
+- `config/supplemental.template.json`
+- `config/segment_rules.template.json`
 
 ### yfinance + supplemental data
 yfinance does not provide non-permissible income or interest-bearing deposits directly. To keep results auditable and avoid fabricated defaults, use a supplemental JSON file for those fields (and any missing values). Format mirrors the local JSON schema, but you only need to supply the fields that yfinance cannot.
