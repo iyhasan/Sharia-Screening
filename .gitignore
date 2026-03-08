@@ -36,3 +36,6 @@ results/
 screenshots/
 scripts/*.dot
 scripts/*.dot.*
+./*.egg-info
+.venv/
+*.pyc
