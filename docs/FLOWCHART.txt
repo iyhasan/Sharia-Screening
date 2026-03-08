@@ -1,0 +1,177 @@
+================================================================================
+  ISLAMIC SHARIA COMPLIANCE SCREENING FLOWCHART (AAOIFI Methodology)
+================================================================================
+
+                          ┌──────────────────┐
+                          │  STOCK INPUT     │
+                          │  Symbol: AAPL    │
+                          └───────┬──────────┘
+                                  │
+                                  ▼
+            ┌────────────────────────────────────────────┐
+            │  BUSINESS SECTOR FILTER (Hard Rejection)  │
+            └────────────────────────────────────────────┘
+                            │
+        ┌───────────────────┼────────────────────┐
+        │                   │                    │
+   ✅ ALLOWED               ❌ PROHIBITED         │
+   Sectors                Sectors               │
+   - Technology           - Banking/Finance     │
+   - Healthcare           - Insurance           │
+   - Retail               - Gambling/Casinos    │
+   - Manufacturing        - Alcohol/Tobacco     │
+   - Energy               - Weapons/Military    │
+                          - Adult Entertainment  │
+        │                   │                    │
+        │                   ▼                    │
+        │          ┌─────────────────┐           │
+        │          │ ❌ REJECTED     │           │
+        │          │ Reason:         │           │
+        │          │ Prohibited      │           │
+        │          │ Sector          │           │
+        │          └─────────────────┘           │
+        │                                        │
+        ▼                                        │
+┌───────────────────┐                            │
+│ NAME/INDUSTRY     │                            │
+│ KEYWORD SCAN      │                            │
+└───────┬───────────┘                            │
+        │                                        │
+        ├─ Scan for prohibited terms:            │
+        │   "alcohol", "casino", "weapons"       │
+        │   "military", "adult entertainment"    │
+        │                                         │
+        ├─ Case-insensitive search               │
+        │                                         
+        ▼                                        │
+┌───────────────────┐                            │
+│  CLEAN BUSINESS?  │                            │
+└───────┬───────────┘                            │
+        │                                        │
+   YES  │          NO                           │
+        │         │                              │
+        ▼         ▼                              │
+┌───────────┐ ┌──────────────┐                  │
+│ CONTINUE  │ │ ❌ REJECTED  │                  │
+│ TO STEP 3 │ │ Keyword in  │                  │
+           │ │ name/industry│                  │
+           └──────────────┘                       │
+                                                │
+                                                ▼
+                                ┌─────────────────────────┐
+                                │  FINANCIAL SCREENING   │
+                                └─────────────────────────┘
+                                                │
+                                                ▼
+                          ┌───────────────────────────────────┐
+                          │  CALCULATE DEBT TO MARKET CAP     │
+                          │                                     │
+                          │  Formula: (Short-term + Long-term │
+                          │              Debt) / Market Cap   │
+                          │                                     │
+                          │  Sources:                          │
+                          │    • yfinance stock['marketCap']   │
+                          │    • Balance sheet data           │
+                          └───────────────────────────────────┘
+                                                │
+                                                ▼
+                            ┌──────────────────────────────┐
+                            │  DEBT RATIO < 33%?          │
+                            │                               │
+                            │  Example AAPL:               │
+                            │    Debt = $205B               │
+                            │    Market Cap = $3,000B       │
+                            │    Ratio = 6.83%              │
+                            └──────────────────────────────┘
+                                                │
+                                    ┌───────────┴───────────┐
+                                    │                       │
+                               YES  │        NO             │
+                                    │    (>33%)             │
+                                    ▼                       ▼
+                         ┌─────────────────┐   ┌───────────────────┐
+                         │ ✅ COMPLIANT    │   │ ⚠️ CONDITIONAL    │
+                         │                 │   │ APPROVAL          │
+                         │ All revenue     │   │                   │
+                         │ is halal        │   │ High debt status  │
+                         └─────────┬───────┘   └─────────┬─────────┘
+                                   │                     │
+                                   ▼                     ▼
+                      ┌────────────────────┐  ┌──────────────────────┐
+                      │ PURIFICATION = 0%  │  │ CALCULATE PURIFICATION│
+                      │                    │  │                       │
+                      │ No action needed   │  │ Formula:             │
+                      │ All income is halal│  │ min(10%, max(2.5%,  │
+                      └────────────────────┘  │        debt/330))    │
+                                            └──────────┬─────────────┘
+                                                       │
+                                                       ▼
+                                          ┌────────────────────────┐
+                                          │ ACTION:                │
+                                          │ Donate purification %   │
+                                          │ of profits to charity  │
+                                          │                        │
+                                          │ Example:               │
+                                          │ Dividend: $1.00        │
+                                          │ Purification: 5%       │
+                                          │ Donate: $0.05          │
+                                          └────────────────────────┘
+
+
+================================================================================
+COMPLIANCE SUMMARY TABLE
+================================================================================
+
+   STATUS        │  BUSINESS SCREEN  │ FINANCIAL SCREEN  │ ACTION REQUIRED
+  ───────────────┼───────────────────┼───────────────────┼─────────────────
+   ✅ COMPLIANT  │     PASS          │      PASS         │ None - All halal
+   ⚠️ CONDITIONAL │     PASS          │      FAIL         │ Purify 2.5-10% of profits
+   ❌ REJECTED    │     FAILED        │       N/A         │ Cannot trade
+
+================================================================================
+PURIFICATION FORMULA EXPLANATION
+================================================================================
+
+When debt ratio >= 33%, calculate purification percentage:
+
+   Purification % = min(10%, max(2.5%, Debt Ratio / 330))
+
+   This means:
+   - Minimum: 2.5% (if debt < 8.25%)
+   - Linear scale: increases with debt ratio
+   - Maximum: 10% (at or above ~33% debt)
+
+   Examples:
+   • Debt = 5%    → Purification = 2.5% (minimum)
+   • Debt = 16.5% → Purification = 5.0% (mid-range)  
+   • Debt = 35%   → Purification = 10% (maximum cap)
+
+================================================================================
+DATA SOURCES
+================================================================================
+
+• yfinance (Yahoo Finance) - Free real-time market data
+• No API key required - Uses public API endpoints
+• Updates: Near real-time during market hours
+• Data points:
+  - Market capitalization
+  - Balance sheet (debt figures)
+  - Company sector classification
+  - Industry description
+  - Long business summary
+
+================================================================================
+METHODOLOGY
+================================================================================
+
+Based on AAOIFI (Accounting and Auditing Organization for 
+Islamic Financial Institutions) Sharia screening standards, 
+widely accepted in Sunni scholarship.
+
+Key principles:
+• Prohibited sectors (riba usury/haram businesses)
+• Maximum interest-bearing debt allowed
+• Ethical business operations required
+• Purification of any non-compliant revenue portions
+
+================================================================================

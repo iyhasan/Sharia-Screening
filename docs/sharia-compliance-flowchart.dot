@@ -1,0 +1,125 @@
+digraph ShariaComplianceFlow {
+    // Graph styling
+    rankdir=LR;  // Left to right layout
+    node [fontname="Arial", fontsize=11];
+    edge [fontname="Arial", fontsize=10, fontcolor="#555555"];
+    labelloc="t";
+    label="ISLAMIC SHARIA COMPLIANCE SCREENING FLOWCHART\n(AAOIFI Methodology - Complete Decision Process)";
+    fontsize=16;
+    
+    // Legend subgraph (top-right corner)
+    subgraph cluster_legend {
+        label="LEGEND";
+        style=filled;
+        color=#f5f5f5;
+        box_width=0;
+        
+        legend_start [label="▶ Start", shape=box, style=filled, fillcolor="#63a4ff", fontcolor="white"];
+        legend_decision [label="▶ Decision", shape=diamond, style=filled, fillcolor="#ffb74d"];
+        legend_reject [label="▶ REJECTED (Red)", shape=box, style=filled, fillcolor="#ffcccb"];
+        legend_pass [label="✅ PASS (Green)", shape=box, style=filled, fillcolor="#c8e6c9"];
+        legend_cond [label="⚠️ CONDITIONAL", shape=box, style=filled, fillcolor="#fff9c4"];
+        
+        // Add arrows to show it's a legend
+        legend_arrow [shape=point, width=0.5, height=0.1];
+        legend_start -> legend_arrow [style=invis];
+        legend_decision -> legend_arrow [style=invis];
+        legend_reject -> legend_arrow [style=invis];
+        legend_pass -> legend_arrow [style=invis];
+        legend_cond -> legend_arrow [style=invis];
+        
+        // Arrange legend vertically
+        legend_start -> legend_decision;
+        legend_decision -> legend_reject;
+        legend_reject -> legend_pass;
+        legend_pass -> legend_cond;
+    }
+    
+    // Main flow diagram (separate from legend)
+    node [shape=box, style=filled, fillcolor="#63a4ff", fontcolor="white"];
+    
+    // START NODE
+    start_node [label="📥 Stock Input\nSymbol: AAPL, MSFT, etc.", fillcolor="#63a4ff"];
+    
+    // First decision - Business Sector Filter
+    subgraph cluster_business_check {
+        label="STEP 1: BUSINESS SECTOR FILTER";
+        style=rounded;
+        color="#ddd";
+        
+        sector_check [label="🔍 Prohibited Sector?", shape=diamond, fillcolor="#ffb74d", fontcolor="black"];
+    }
+    
+    // Keywords check
+    subgraph cluster_keywords_check {
+        label="STEP 2: NAME/INDUSTRY SCAN";
+        style=rounded;
+        color="#ddd";
+        
+        keyword_check [label="🔍 Contains Forbidden Terms?", shape=diamond, fillcolor="#ffb74d", fontcolor="black"];
+    }
+    
+    // Financial screening
+    subgraph cluster_financial_check {
+        label="STEP 3: FINANCIAL RATIO CHECK";
+        style=rounded;
+        color="#ddd";
+        
+        debt_check [label="📊 Debt/Mkt Cap < 33%?", shape=diamond, fillcolor="#ffb74d", fontcolor="black"];
+    }
+    
+    // REJECTION NODES (Red)
+    rejected_sector [label="❌ REJECTED\nReason: Prohibited Sector", shape=box, fillcolor="#ffcccb", fontcolor="#d32f2f"];
+    rejected_keywords [label="❌ REJECTED\nReason: Unethical Business", shape=box, fillcolor="#ffcccb", fontcolor="#d32f2f"];
+    
+    // PASS NODE (Green)
+    compliant [label="✅ COMPLIANT\nAll Criteria Met", shape=box, fillcolor="#c8e6c9", fontcolor="#388e3c"];
+    
+    // CONDITIONAL APPROVAL NODE (Yellow)
+    subgraph cluster_purification {
+        label="PURIFICATION REQUIRED";
+        style=rounded;
+        color="#ddd";
+        
+        conditional [label="⚠️ CONDITIONAL APPROVAL\nHigh Debt (>33%)", shape=box, fillcolor="#fff9c4", fontcolor="#f57c00"];
+    }
+    
+    // PURIFICATION CALCULATION NODE (Orange/Yellow)
+    purify_calc [label="💰 Calculate Purification %\nFormula: min(10%, max(2.5%, debt/330))", shape=box, style=filled, fillcolor="#ffe082"];
+    
+    // ACTION NODE (Blue)
+    action [label="📝 ACTION REQUIRED\nDonate purification% of profits to charity", shape=box, fillcolor="#bbdefb", fontcolor="#1976d2"];
+    
+    // CONNECTIONS
+    // From Start to Sector Check
+    start_node -> sector_check [label="Begin Analysis", color="#1976d2", penwidth=2];
+    
+    // From Sector Check - YES path (allowed sectors) to Keywords
+    sector_check -> keyword_check [label="✅ Allowed Sector", color="#388e3c", penwidth=2];
+    
+    // From Sector Check - NO path (prohibited) to Rejected
+    sector_check -> rejected_sector [label="❌ Prohibited Sector", color="#d32f2f", penwidth=2, style=dashed];
+    
+    // From Keywords Check - YES path (clean business) to Financial
+    keyword_check -> debt_check [label="✅ No Forbidden Terms", color="#388e3c", penwidth=2];
+    
+    // From Keywords Check - NO path (forbidden terms) to Rejected
+    keyword_check -> rejected_keywords [label="❌ Contains Prohibited Terms", color="#d32f2f", penwidth=2, style=dashed];
+    
+    // From Debt Check - YES path (low debt) to Compliant
+    debt_check -> compliant [label="✅ YES (< 33%)", color="#388e3c", penwidth=2];
+    
+    // From Debt Check - NO path (high debt) to Conditional
+    debt_check -> conditional [label="❌ NO (≥ 33%)", color="#f57c00", penwidth=2, style=dashed];
+    
+    // From Conditional to Purification Calculation
+    conditional -> purify_calc [color="#f57c00", penwidth=2];
+    
+    // From Purification Calculation to Action
+    purify_calc -> action [color="#f57c00", penwidth=2];
+    
+    // Legend arrows (invisible lines)
+    legend_arrow -> rejected_start [style=invis, color=white];
+    
+}
+

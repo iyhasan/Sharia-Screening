@@ -9,97 +9,81 @@ A standalone, open-source tool for screening stocks based on Sharia compliance u
 git clone https://github.com/your-repo/sharia-screener.git
 cd sharia-screener
 python -m venv venv
-source venv/bin/activate  # or: venv\Scripts\activate
+source venv/bin/activate  # or: venv\Scripts\activate on Windows
 pip install -r requirements.txt
 
-# Run the scanner
+# Test it immediately (uses REAL data from Yahoo Finance!)
 python src/scanner.py --symbol AAPL
 ```
 
 ## 📊 Features
 
-- ✅ **Real-time data** via yfinance (no API key needed)
+- ✅ **Real-time data** via yfinance (no API key needed - completely free)
 - ✅ **AAOIFI methodology** for Sharia screening
-- ✅ **Business sector filtering** (alcohol, banks, insurance, etc.)
+- ✅ **Business sector filtering** (blocks prohibited industries)
 - ✅ **Financial ratio validation** (debt-to-market-cap < 33%)
 - ✅ **Purification amount calculation** for non-compliant revenue
-- ✅ **Flowchart visualization** of compliance logic
 - ✅ **Batch screening** for multiple stocks
 - ✅ **Export results** to JSON/CSV
 
-## 🔍 Compliance Logic Flow
+## 🔍 How It Works
 
-```mermaid
-graph TD
-    A[Stock Symbol] --> B{Sector Check}
-    B -->|Prohibited Sector| Z[❌ REJECTED]
-    B -->|Allowed Sector| C{Debt Ratio < 33%?}
-    C -->|Yes| D[✅ COMPLIANT]
-    C -->|No| E{Debt/Market Cap ≤ 5%}
-    E -->|Yes| F[⚠️ CONDITIONAL]
-    E -->|No| Z
-    D --> G[Purification: 0%]
-    F --> H[Purification: 2.5-10%]
+The screener follows the AAOIFI (Accounting and Auditing Organization for Islamic Financial Institutions) standards:
+
+1. **Business Screening**: Rejects prohibited sectors (banks, insurance, gambling, alcohol, tobacco, weapons)
+2. **Financial Screening**: Validates debt-to-market-cap ratio is below 33%
+3. **Purification Calculation**: If debt is too high, calculates what percentage of profits must be donated to charity
+
+### Example Output:
+```bash
+✅ AAPL - Sharia Compliance Analysis
+   • Debt/Mkt Cap: 1.72%
+   • Purification: 0% (All revenue halal)
+   Status: COMPLIANT
 ```
 
-## 📋 Screening Rules
+## 📁 Directory Structure
 
-### Prohibited Industries (Immediate Rejection)
-- Alcohol & Tobacco
-- Banking, Finance & Insurance
-- Gambling & Casinos
-- Weapons & Military Contracting
-- Adult Entertainment
+```
+sharia-screener/
+├── README.md                 # This file
+├── requirements.txt          # Dependencies
+├── setup.py                  # For pip install
+│
+├── src/                     # Core logic
+│   ├── __init__.py
+│   ├── screener.py          # Main screening engine
+│   └── cli.py               # Command-line interface
+│
+├── docs/                    # Generated outputs
+│   ├── sharia-compliance-flowchart.png  # Visual flowchart
+│   └── sharia-compliance-flowchart.dot  # Graphviz source code
+│
+└── scripts/                 # Utility scripts
+    └── generate_graphviz_flowchart.py  # Generate diagrams
+```
 
-### Financial Ratios
-| Metric | Threshold | Purpose |
-|--------|-----------|---------|
-| Debt/Market Cap | < 33% | Standard AAOIFI limit |
-| Cash Reserves | Track separately | Purification calculation |
-| Interest Income | < 5% of revenue | Must be purified |
-
-### Purification (Washing) Amount
-- Calculate % of non-compliant revenue
-- Donate proportionate amount from dividends/profits
-- Formula: `purification_amount = dividend × (non_compliant_revenue / total_revenue)`
-
-## 🛠️ Usage Examples
+## 🎯 Usage Examples
 
 ### Single Stock Analysis
 ```bash
-python src/scanner.py --symbol AAPL --detailed
+# Quick check for one stock
+python -m src scanner --symbol AAPL
+
+# Detailed analysis with all metrics
+python -m src scanner --symbol MSFT --detailed
 ```
 
 ### Batch Screening
 ```bash
-python src/scanner.py --symbols AAPL,MSFT,GOOGL --export results.json
+# Screen multiple stocks at once
+python -m src scanner --symbols AAPL,MSFT,GOOGL,TGT
+
+# Export results to JSON file
+python -m src scanner --symbols AMZN,NFLX,XOM,BAC --export results.json
 ```
 
-### Generate Flowchart
-```bash
-python src/flowchart_generator.py --output compliance-flow.png
-```
-
-## 📦 Output Format
-
-```json
-{
-  "symbol": "AAPL",
-  "status": "COMPLIANT",
-  "business_screen": "PASS",
-  "financial_screen": "PASS",
-  "debt_to_market_cap": 1.72,
-  "non_compliant_revenue_pct": 0.0,
-  "purification_ratio": 0.05,
-  "screening_date": "2026-03-08T03:05:21Z",
-  "notes": "Clean business model, low debt"
-}
-```
-
-## 🌐 Integration
-
-Use as a Python library:
-
+### Using as Python Library
 ```python
 from src.screener import ShariaScreener
 
@@ -108,21 +92,60 @@ result = screener.check_stock("AAPL")
 
 if result.is_compliant:
     print(f"✅ {result.symbol} is Sharia-compliant")
-    print(f"   Purification ratio: {result.purification_ratio:.2%}")
+    print(f"   Debt ratio: {result.debt_to_market_cap_pct:.2f}%")
+    print(f"   Purification needed: 0%")
 else:
     print(f"❌ {result.symbol} rejected: {result.rejection_reason}")
 ```
 
-## 📚 Methodology
+## 🖼️ Visual Flowchart
 
-This tool implements the **AAOIFI (Accounting and Auditing Organization for Islamic Financial Institutions)** Sharia screening standards, widely accepted in Sunni scholarship.
+The screening logic is visualized in `docs/sharia-compliance-flowchart.png`:
+
+- **Red boxes**: Stocks REJECTED due to prohibited sector or business type
+- **Green boxes**: Fully COMPLIANT stocks (0% purification needed)
+- **Yellow boxes**: CONDITIONAL approval (high debt, 2.5-10% purification required)
+
+## 💰 Purification (Washing) Explained
+
+When a stock passes screening but has high debt (>33% of market cap), you must "purify" earnings:
+
+**Formula**: `Purification % = min(10%, max(2.5%, debt_ratio / 330))`
+
+**Example**:
+- Dividend received: $1.00 per share
+- Purification required: 5%
+- Action: Donate $0.05 to charity before using the remaining $0.95
+
+## 📊 Methodology Details
+
+### Prohibited Industries (Immediate Rejection)
+- Banking & Financial Services
+- Insurance Companies  
+- Gambling/Casinos
+- Alcohol Production
+- Tobacco Manufacturing
+- Weapons/Military Contracting
+- Adult Entertainment
+
+### Financial Thresholds
+| Metric | Limit | Purpose |
+|--------|-------|---------|
+| Debt/Market Cap | < 33% | Ensures low leverage (AAOIFI standard) |
+| Cash Reserves | Tracked | For purification calculation |
 
 ## 🔗 Related Projects
 
-- [Alpaca API](https://alpaca.markets/) - Trading platform
-- [yfinance](https://github.com/ranaroussi/yfinance) - Free market data
-- [Zoya.finance](https://zoya.finance/) - Alternative commercial screener
+- [Alpaca API](https://alpaca.markets/) - Trading platform integration
+- [yfinance](https://github.com/ranaroussi/yfinance) - Free market data source
+- [Zoya.finance](https://zoya.finance/) - Commercial Sharia screening alternative
 
 ## 📄 License
 
 Apache 2.0 - Feel free to use, modify, and distribute!
+
+---
+
+**Developed with ❤️ for the Muslim investing community**
+
+*Note: This tool provides information only and should not be considered financial or religious advice. Always consult qualified scholars for personal guidance.*
