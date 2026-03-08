@@ -3,9 +3,9 @@
 Test script for Sharia Compliance Screener (new engine)
 
 Uses the same provider logic as the CLI. Configure via env vars:
-- SHARIA_PROVIDER (local | yfinance | sec)
+- SHARIA_PROVIDER (local | combined)
 - SHARIA_DATA_PATH
-- SHARIA_SUPPLEMENTAL_PATH
+- SHARIA_JSON (inline JSON payload for local provider)
 - SHARIA_SEGMENT_RULES_PATH
 - SEC_USER_AGENT
 """
@@ -21,6 +21,7 @@ from sharia_screener.screening import ScreenEngine
 def build_engine() -> ScreenEngine:
     provider = os.getenv("SHARIA_PROVIDER", "local")
     data_path = os.getenv("SHARIA_DATA_PATH", str(Path(__file__).parent.parent / "data" / "example.json"))
+    inline_json = os.getenv("SHARIA_JSON")
     segment_rules_path = os.getenv("SHARIA_SEGMENT_RULES_PATH")
     sec_user_agent = os.getenv("SEC_USER_AGENT")
 
@@ -30,7 +31,10 @@ def build_engine() -> ScreenEngine:
             segment_rules = json.load(f)
 
     if provider == "local":
-        provider_obj = LocalJsonProvider(data_path)
+        if inline_json:
+            provider_obj = LocalJsonProvider(json.loads(inline_json))
+        else:
+            provider_obj = LocalJsonProvider(data_path)
     else:
         from sharia_screener.providers.unified_provider import UnifiedProvider
         provider_obj = UnifiedProvider(sec_user_agent=sec_user_agent, segment_rules=segment_rules)
@@ -45,6 +49,10 @@ def test_single_stock(engine: ScreenEngine, symbol: str):
 
     result = engine.screen(symbol)
     print(result.report)
+    if result.estimation_notes:
+        print("Estimation notes:")
+        for note in result.estimation_notes:
+            print(f"  - {note}")
     return result
 
 
