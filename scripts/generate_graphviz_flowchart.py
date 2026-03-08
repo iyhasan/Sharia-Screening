@@ -184,7 +184,7 @@ def generate_all_formats(output_dir: str = "."):
         
         # Render to PNG
         png_path = path / "sharia-compliance-flowchart.png"
-        svg.render(format='png', output_folder=output_dir, cleanup=False)
+        svg.render(format='png', directory=output_dir, cleanup=False)
         print(f"✅ PNG generated: {png_path}")
         
     except ImportError:
