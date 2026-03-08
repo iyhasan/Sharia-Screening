@@ -59,6 +59,7 @@ class SecXbrlSource:
         }
 
     def _latest_fact(self, facts: dict, tags: list[str], unit: str = "USD") -> tuple[Optional[Decimal], Optional[str]]:
+        best = None
         for tag in tags:
             if tag not in facts:
                 continue
@@ -66,7 +67,6 @@ class SecXbrlSource:
             if unit not in units:
                 continue
             entries = units[unit]
-            latest = None
             for entry in entries:
                 end = entry.get("end")
                 val = entry.get("val")
@@ -76,10 +76,10 @@ class SecXbrlSource:
                     end_dt = datetime.fromisoformat(end)
                 except ValueError:
                     continue
-                if latest is None or end_dt > latest[0]:
-                    latest = (end_dt, Decimal(str(val)), end)
-            if latest:
-                return latest[1], latest[2]
+                if best is None or end_dt > best[0]:
+                    best = (end_dt, Decimal(str(val)), end)
+        if best:
+            return best[1], best[2]
         return None, None
 
     def _sum_facts(self, facts: dict, tags: list[str]) -> Optional[Decimal]:
